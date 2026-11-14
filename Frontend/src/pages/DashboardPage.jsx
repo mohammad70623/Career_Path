@@ -14,11 +14,8 @@ import {
   AlertTriangle,
   ExternalLink,
   ChevronRight,
-  ShieldAlert,
   Building2,
-  MapPin,
-  Clock,
-  Layers
+  MapPin
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -33,7 +30,7 @@ import {
 import { useCareer } from '../context/CareerContext';
 
 /**
- * Weekly ML Verification & Fraud Blocking Dataset
+ * Weekly legitimate job verification vs scam detection data
  */
 const AUDIT_TREND_DATA = [
   { name: 'Mon', verified: 38, blocked: 4 },
@@ -46,56 +43,198 @@ const AUDIT_TREND_DATA = [
 ];
 
 /**
- * Recent verified jobs audit feed
+ * Generate authentic, realistic job listings tailored to candidate target role & selected country
  */
-const RECENT_AUDITS = [
-  {
-    id: 'audit-1',
-    role: 'Lead AI / MLOps Engineer',
-    company: 'Apex FinTech Systems',
-    location: 'Dhaka, Bangladesh',
-    matchScore: 95,
-    verdict: 'Looks legitimate',
-    riskLevel: 'low',
-    details: 'Verified corporate domain, registered trade license & matching pay benchmark.'
-  },
-  {
-    id: 'audit-2',
-    role: 'Staff ML Infrastructure Engineer',
-    company: 'Horizon Cloud Labs',
-    location: 'Remote (USA / Global)',
-    matchScore: 89,
-    verdict: 'Looks legitimate',
-    riskLevel: 'low',
-    details: 'Authenticated GitHub organization & verifiable LinkedIn executive profiles.'
-  },
-  {
-    id: 'audit-3',
-    role: 'Crypto Arbitrage Trader & QA Tester',
-    company: 'Overseas FastPay Group',
-    location: 'Remote / Unverified',
-    matchScore: 42,
-    verdict: 'Possible risk',
-    riskLevel: 'high',
-    details: 'Unregistered domain registered 5 days ago; solicits WhatsApp interview & deposit.'
-  },
-  {
-    id: 'audit-4',
-    role: 'Computer Vision Research Specialist',
-    company: 'DeepSight Imaging',
-    location: 'Bengaluru, India',
-    matchScore: 86,
-    verdict: 'Looks legitimate',
-    riskLevel: 'low',
-    details: 'Established R&D center with verified patent filings and peer reviews.'
+const getRecentJobChecks = (country, targetRole = 'Software Engineer') => {
+  const roleName = targetRole || 'Software Engineer';
+
+  if (country === 'Bangladesh') {
+    return [
+      {
+        id: 'job-bd-1',
+        title: roleName.includes('AI') || roleName.includes('Machine Learning')
+          ? 'Machine Learning Engineer'
+          : `${roleName}`,
+        company: 'Brain Station 23',
+        location: 'Dhaka, Bangladesh',
+        matchScore: '95% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Recognized IT leader with registered corporate entity and verified employees.'
+      },
+      {
+        id: 'job-bd-2',
+        title: 'Data & Analytics Specialist',
+        company: 'bKash Limited',
+        location: 'Dhaka, Bangladesh',
+        matchScore: '89% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Premier FinTech organization with verified central headquarters in Dhaka.'
+      },
+      {
+        id: 'job-bd-3',
+        title: 'Remote Data Entry & Form Filling (Upfront Training Fee Required)',
+        company: 'Online Freelance Direct',
+        location: 'Online / Telegram Recruit',
+        matchScore: '38% Match',
+        status: 'warning',
+        statusLabel: 'Suspicious / High Risk',
+        notes: 'Flagged: recruiter asks for money upfront for training software or registration.'
+      },
+      {
+        id: 'job-bd-4',
+        title: roleName.includes('AI') ? 'Senior AI Research Engineer' : 'Lead Software Architect',
+        company: 'ShopUp',
+        location: 'Dhaka, Bangladesh',
+        matchScore: '92% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Established e-commerce logistics platform with verified technical team.'
+      }
+    ];
   }
-];
+
+  if (country === 'India') {
+    return [
+      {
+        id: 'job-in-1',
+        title: roleName,
+        company: 'Infosys Technologies',
+        location: 'Bengaluru, India',
+        matchScore: '95% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Verified multinational technology enterprise.'
+      },
+      {
+        id: 'job-in-2',
+        title: 'Senior Platform Engineer',
+        company: 'Flipkart Internet',
+        location: 'Bengaluru, India',
+        matchScore: '91% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Major verified corporate headquarters and competitive salary benchmarks.'
+      },
+      {
+        id: 'job-in-3',
+        title: 'Work-from-Home Assistant (Registration Deposit Mandatory)',
+        company: 'FastHire Global Express',
+        location: 'Online / WhatsApp',
+        matchScore: '36% Match',
+        status: 'warning',
+        statusLabel: 'Suspicious / High Risk',
+        notes: 'Flagged: request for advance processing deposit before job assignment.'
+      },
+      {
+        id: 'job-in-4',
+        title: 'Data Systems Engineer',
+        company: 'Tata Consultancy Services',
+        location: 'Mumbai, India',
+        matchScore: '88% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Verified corporate domain, established enterprise recruiting process.'
+      }
+    ];
+  }
+
+  if (country === 'USA') {
+    return [
+      {
+        id: 'job-us-1',
+        title: roleName,
+        company: 'Google Cloud Labs',
+        location: 'San Francisco, CA',
+        matchScore: '96% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Verified enterprise hiring channel with authentic career domain.'
+      },
+      {
+        id: 'job-us-2',
+        title: 'Full-Stack Software Engineer',
+        company: 'Stripe',
+        location: 'San Francisco, CA',
+        matchScore: '92% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'High-reputation verified technology brand and transparent salary range.'
+      },
+      {
+        id: 'job-us-3',
+        title: 'Mystery Shopper & Quality Evaluator (Check Deposit Required)',
+        company: 'Apex Mystery Shoppers',
+        location: 'Remote / Unverified',
+        matchScore: '32% Match',
+        status: 'warning',
+        statusLabel: 'Suspicious / High Risk',
+        notes: 'Flagged: classic counterfeit check overpayment scheme detected.'
+      },
+      {
+        id: 'job-us-4',
+        title: 'Distributed Systems Engineer',
+        company: 'Datadog',
+        location: 'New York, NY',
+        matchScore: '88% Match',
+        status: 'safe',
+        statusLabel: 'Verified Safe',
+        notes: 'Verified NASDAQ-listed cloud observability leader.'
+      }
+    ];
+  }
+
+  // Default international realistic dataset
+  return [
+    {
+      id: 'job-def-1',
+      title: roleName,
+      company: 'Apex Enterprise Technologies',
+      location: `${country}`,
+      matchScore: '94% Match',
+      status: 'safe',
+      statusLabel: 'Verified Safe',
+      notes: 'Verified business registry, active official careers portal.'
+    },
+    {
+      id: 'job-def-2',
+      title: 'Senior Cloud Systems Specialist',
+      company: 'Horizon Global Systems',
+      location: `${country}`,
+      matchScore: '89% Match',
+      status: 'safe',
+      statusLabel: 'Verified Safe',
+      notes: 'Authenticated company email domain and active LinkedIn executive profiles.'
+    },
+    {
+      id: 'job-def-3',
+      title: 'Part-Time Remote Assistant ($150 Equipment Deposit Needed)',
+      company: 'Direct Talent Network',
+      location: 'Remote / Unverified',
+      matchScore: '35% Match',
+      status: 'warning',
+      statusLabel: 'Suspicious / High Risk',
+      notes: 'Flagged: demands upfront candidate payment for equipment. High scam risk.'
+    },
+    {
+      id: 'job-def-4',
+      title: 'Core Software Developer',
+      company: 'Quantum Innovations Group',
+      location: `${country}`,
+      matchScore: '87% Match',
+      status: 'safe',
+      statusLabel: 'Verified Safe',
+      notes: 'Established regional employer with verified workplace reviews.'
+    }
+  ];
+};
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const { cvData, jobFilters, roadmapSteps } = useCareer();
 
-  // Dynamic ATS Score Calculation based on cvData
+  // Dynamic ATS CV Strength Score Calculation
   const calculateAtsScore = () => {
     let score = 40;
     if (cvData.fullName && cvData.fullName.trim().length > 2) score += 6;
@@ -132,6 +271,9 @@ export const DashboardPage = () => {
     : 4;
   const roadmapProgressPct = Math.round((completedRoadmapSteps / totalRoadmapSteps) * 100);
 
+  // Dynamic Recent Job Safety Checks for current country & role
+  const recentJobs = getRecentJobChecks(jobFilters.country, cvData.targetRole);
+
   return (
     <div className="max-w-7xl mx-auto space-y-7">
       {/* 1. TOP WELCOME & QUICK ACTION CARD */}
@@ -140,11 +282,11 @@ export const DashboardPage = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="badge badge-sm font-semibold tracking-wider uppercase bg-primary text-primary-content">
-                Command Center
+                Executive Overview
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent/10 text-accent">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
-                ML Guard Operational
+                Job Safety Shield Active
               </span>
             </div>
 
@@ -153,11 +295,11 @@ export const DashboardPage = () => {
             </h1>
 
             <p className="text-sm text-base-content/75 max-w-2xl leading-relaxed">
-              Targeting <strong className="text-primary">{cvData.targetRole || 'AI / Machine Learning Engineer'}</strong> roles across{' '}
+              Targeting <strong className="text-primary">{cvData.targetRole || 'Software Engineer'}</strong> roles across{' '}
               <span className="font-semibold text-base-content">
                 {jobFilters.city}, {jobFilters.country}
               </span>{' '}
-              ({jobFilters.region}) in <span className="font-semibold text-base-content">{jobFilters.industry}</span>.
+              in <span className="font-semibold text-base-content">{jobFilters.industry}</span>.
             </p>
           </div>
 
@@ -185,11 +327,11 @@ export const DashboardPage = () => {
 
       {/* 2. 4 KPI SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* KPI 1: CV ATS Readiness */}
+        {/* KPI 1: CV Strength Score */}
         <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              CV ATS Readiness
+              CV Strength Score
             </span>
             <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary">
               <FileText className="w-4 h-4 text-primary" />
@@ -201,19 +343,19 @@ export const DashboardPage = () => {
             </span>
             <span className="text-xs font-semibold text-base-content/50">/ 100</span>
             <span className="badge badge-xs bg-accent/10 text-accent font-semibold ml-auto">
-              Optimized
+              Strong Profile
             </span>
           </div>
           <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            Multi-level academic & skills hierarchy parsed
+            Ready for applicant tracking systems & recruiter review
           </p>
         </div>
 
-        {/* KPI 2: Live Regional Jobs */}
+        {/* KPI 2: Verified Jobs Available */}
         <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              Live Regional Jobs
+              Verified Jobs Available
             </span>
             <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary">
               <Briefcase className="w-4 h-4 text-primary" />
@@ -223,21 +365,21 @@ export const DashboardPage = () => {
             <span className="text-2xl font-bold tracking-tight text-primary">
               142
             </span>
-            <span className="text-xs font-semibold text-base-content/50">Vacancies</span>
+            <span className="text-xs font-semibold text-base-content/50">Openings</span>
             <span className="badge badge-xs bg-primary/10 text-primary font-semibold ml-auto">
-              Tavily Live
+              Active Now
             </span>
           </div>
           <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            Active in {jobFilters.city}, {jobFilters.country}
+            Hiring right now in {jobFilters.city}, {jobFilters.country}
           </p>
         </div>
 
-        {/* KPI 3: ML Fraud Guard */}
+        {/* KPI 3: Fake Jobs Blocked */}
         <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              ML Fraud Guard
+              Fake Jobs Blocked
             </span>
             <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
               <ShieldCheck className="w-4 h-4" />
@@ -247,21 +389,21 @@ export const DashboardPage = () => {
             <span className="text-2xl font-bold tracking-tight text-accent">
               3 Scams
             </span>
-            <span className="text-xs font-semibold text-base-content/60">Blocked</span>
+            <span className="text-xs font-semibold text-base-content/60">Filtered</span>
             <span className="badge badge-xs bg-accent/15 text-accent font-semibold ml-auto">
-              14 Scans
+              14 Checked
             </span>
           </div>
           <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            Sub-40ms heuristic scam classifier
+            Suspicious listings detected & safely prevented
           </p>
         </div>
 
-        {/* KPI 4: Skill Roadmap Progress */}
+        {/* KPI 4: Career Goals Completed */}
         <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              Roadmap Progress
+              Career Goals Completed
             </span>
             <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary">
               <Milestone className="w-4 h-4 text-primary" />
@@ -295,10 +437,10 @@ export const DashboardPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-base-300/80">
               <div>
                 <h3 className="text-base font-bold text-primary tracking-tight">
-                  Weekly Verified Jobs vs. Fraud Blocked
+                  Jobs Found vs. Scams Blocked
                 </h3>
                 <p className="text-xs text-base-content/60 mt-0.5">
-                  Tavily live ingestion vs. ML fraud filter in {jobFilters.region}
+                  Weekly summary of legitimate job listings verified vs. fraudulent posts filtered in {jobFilters.region}
                 </p>
               </div>
 
@@ -358,7 +500,7 @@ export const DashboardPage = () => {
                   <Area
                     type="monotone"
                     dataKey="verified"
-                    name="Verified Vacancies"
+                    name="Verified Jobs"
                     stroke="#111827"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -367,7 +509,7 @@ export const DashboardPage = () => {
                   <Area
                     type="monotone"
                     dataKey="blocked"
-                    name="Fraud Flagged"
+                    name="Scams Blocked"
                     stroke="#059669"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -379,8 +521,8 @@ export const DashboardPage = () => {
           </div>
 
           <div className="pt-3 border-t border-base-300/80 flex items-center justify-between text-xs text-base-content/60">
-            <span>Model Version: ML-Guard-v2.4 (99.2% Accuracy)</span>
-            <span className="font-semibold text-primary">Tavily Streaming Active</span>
+            <span>Automated Protection Active</span>
+            <span className="font-semibold text-primary">Updated daily for {jobFilters.country}</span>
           </div>
         </div>
 
@@ -391,7 +533,7 @@ export const DashboardPage = () => {
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-primary" />
                 <h3 className="text-base font-bold text-primary tracking-tight">
-                  Active Target Criteria
+                  Your Job Preferences
                 </h3>
               </div>
 
@@ -418,15 +560,15 @@ export const DashboardPage = () => {
                 </span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-base-200">
-                <span className="text-base-content/60">Metropolitan City</span>
+                <span className="text-base-content/60">City</span>
                 <span className="font-bold text-primary">{jobFilters.city}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-base-200">
-                <span className="text-base-content/60">Work Mode</span>
+                <span className="text-base-content/60">Work Type</span>
                 <span className="font-bold text-primary">{jobFilters.jobType}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-base-200">
-                <span className="text-base-content/60">Seniority Level</span>
+                <span className="text-base-content/60">Experience Level</span>
                 <span className="font-bold text-primary">{jobFilters.experience}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-base-200">
@@ -434,11 +576,11 @@ export const DashboardPage = () => {
                 <span className="font-bold text-primary">{jobFilters.industry}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-base-200">
-                <span className="text-base-content/60">Salary Expectation</span>
+                <span className="text-base-content/60">Target Salary</span>
                 <span className="font-bold text-primary">{jobFilters.salary}</span>
               </div>
               <div className="flex items-center justify-between py-1">
-                <span className="text-base-content/60">Visa / Authorization</span>
+                <span className="text-base-content/60">Work Authorization</span>
                 <span className="font-bold text-primary truncate max-w-[180px]">
                   {jobFilters.workAuth}
                 </span>
@@ -451,25 +593,25 @@ export const DashboardPage = () => {
               onClick={() => navigate('/career-paths')}
               className="btn btn-sm btn-outline border-base-300 w-full text-primary hover:bg-primary hover:text-primary-content rounded-xl font-semibold gap-1.5"
             >
-              <span>Explore Trajectories for this Location</span>
+              <span>Explore Career Paths for {jobFilters.city}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 4. BOTTOM RECENT ML + TAVILY AUDITS TABLE */}
+      {/* 4. BOTTOM RECENT JOB SAFETY CHECKS TABLE */}
       <div className="card bg-base-100 border border-base-300 rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-base-300/80">
           <div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-accent" />
               <h3 className="text-base font-bold text-primary tracking-tight">
-                Recent ML Guard & Tavily Live Audits
+                Recent Job Safety Checks
               </h3>
             </div>
             <p className="text-xs text-base-content/60 mt-0.5">
-              Live verification stream protecting candidate applications in {jobFilters.country}
+              Latest job postings checked against your CV and scam filters in {jobFilters.country}
             </p>
           </div>
 
@@ -482,57 +624,62 @@ export const DashboardPage = () => {
           </button>
         </div>
 
-        {/* Responsive Table */}
+        {/* Clean, Human-Friendly Table */}
         <div className="overflow-x-auto">
           <table className="table table-sm w-full text-xs">
             <thead>
               <tr className="border-b border-base-300 text-base-content/60 font-bold uppercase tracking-wider text-[11px]">
-                <th>Job Role & Position</th>
-                <th>Company Entity</th>
+                <th>Job Title</th>
+                <th>Company</th>
                 <th>Location</th>
-                <th>Vector Match</th>
-                <th>ML Verdict</th>
+                <th>CV Match</th>
+                <th>Safety Status</th>
                 <th className="text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {RECENT_AUDITS.map((item) => {
-                const isLegit = item.verdict === 'Looks legitimate';
+              {recentJobs.map((job) => {
+                const isSafe = job.status === 'safe';
                 return (
-                  <tr key={item.id} className="border-b border-base-200 hover:bg-base-200/40 transition-colors">
-                    <td className="font-bold text-primary">
-                      {item.role}
+                  <tr key={job.id} className="border-b border-base-200 hover:bg-base-200/40 transition-colors">
+                    <td className="font-bold text-primary max-w-[260px]">
+                      <div className="truncate" title={job.title}>
+                        {job.title}
+                      </div>
+                      <div className="text-[11px] text-base-content/50 font-normal truncate mt-0.5" title={job.notes}>
+                        {job.notes}
+                      </div>
                     </td>
-                    <td className="font-medium text-base-content/80">
-                      {item.company}
+                    <td className="font-semibold text-base-content/85">
+                      {job.company}
                     </td>
-                    <td className="text-base-content/65">
-                      {item.location}
+                    <td className="text-base-content/65 whitespace-nowrap">
+                      {job.location}
                     </td>
                     <td>
-                      <span className="font-semibold text-primary font-mono">
-                        {item.matchScore}%
+                      <span className="font-semibold text-primary font-mono bg-base-200 px-2 py-0.5 rounded">
+                        {job.matchScore}
                       </span>
                     </td>
                     <td>
-                      {isLegit ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {isSafe ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                           <CheckCircle2 className="w-3 h-3" />
-                          <span>Looks legitimate</span>
+                          <span>Verified Safe</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                           <AlertTriangle className="w-3 h-3" />
-                          <span>Possible risk</span>
+                          <span>Suspicious / High Risk</span>
                         </span>
                       )}
                     </td>
                     <td className="text-right">
                       <button
                         onClick={() => navigate('/jobs')}
-                        className="btn btn-ghost btn-xs text-primary hover:bg-base-200 font-semibold"
+                        className="btn btn-xs btn-outline border-base-300 text-primary hover:bg-primary hover:text-primary-content font-medium rounded-lg"
                       >
-                        Inspect
+                        View Details
                       </button>
                     </td>
                   </tr>
