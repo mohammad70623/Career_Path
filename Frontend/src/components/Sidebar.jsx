@@ -51,7 +51,7 @@ const NAV_ITEMS = [
   },
   {
     to: '/radar-progress',
-    label: 'Company Radar & Progress',
+    label: 'Radar & Progress',
     icon: Radar
   }
 ];

@@ -13,12 +13,12 @@ import {
   ArrowRight,
   Globe,
   BellRing,
-  CheckCircle2,
-  Printer
+  CheckCircle2
 } from 'lucide-react';
 
 import { CareerProvider, useCareer } from './context/CareerContext';
 import { Sidebar } from './components/Sidebar';
+import { MyCVPage } from './pages/MyCVPage';
 
 /**
  * Reusable luxury-styled placeholder view for testing routing & theme foundation.
@@ -28,8 +28,7 @@ const RoutePlaceholder = ({
   title,
   description,
   icon: Icon,
-  routePath,
-  isCvView = false
+  routePath
 }) => {
   const {
     cvData,
@@ -42,10 +41,6 @@ const RoutePlaceholder = ({
     toast.success(`Active on ${title}. Step 1 Foundation verified!`, {
       icon: '✨'
     });
-  };
-
-  const handlePrintTest = () => {
-    window.print();
   };
 
   return (
@@ -85,16 +80,6 @@ const RoutePlaceholder = ({
             <BellRing className="w-3.5 h-3.5" />
             <span>Test Toast</span>
           </button>
-
-          {isCvView && (
-            <button
-              onClick={handlePrintTest}
-              className="btn btn-sm btn-outline gap-1.5 shadow-2xs no-print"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print A4</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -107,16 +92,16 @@ const RoutePlaceholder = ({
           <div className="space-y-1.5 flex-1">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-primary">
-                Step 1 Foundation & Routing Verification
+                Module Foundation Status
               </h2>
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-md">
                 <CheckCircle2 className="w-3 h-3" /> Ready
               </span>
             </div>
             <p className="text-sm text-base-content/70 leading-relaxed max-w-2xl">
-              This route is fully wired into <strong className="text-base-content">CareerContext</strong>,
+              This module is wired into <strong className="text-base-content">CareerContext</strong>,
               styled with the <code className="text-xs font-mono bg-base-200 px-1 py-0.5 rounded">nextjob-luxury</code> DaisyUI theme,
-              and ready for Step 2 feature integration.
+              and ready for inner feature integration.
             </p>
           </div>
         </div>
@@ -189,60 +174,12 @@ const RoutePlaceholder = ({
             </p>
           </div>
         </div>
-
-        {/* Printable Area Container for /my-cv preview and print test */}
-        {isCvView && (
-          <div
-            id="cv-printable-area"
-            className="mt-8 p-6 rounded-xl border border-dashed border-base-300 bg-white"
-          >
-            <div className="border-b border-gray-200 pb-4 mb-4">
-              <h3 className="text-xl font-bold text-gray-900">
-                {cvData.fullName}
-              </h3>
-              <p className="text-sm font-semibold text-gray-600">
-                {cvData.targetRole} • {selectedCountry}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-700">
-              <div>
-                <h4 className="font-bold text-gray-900 mb-1 uppercase tracking-wider text-[11px]">
-                  Core Competencies
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {cvData.skills.map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded font-mono"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900 mb-1 uppercase tracking-wider text-[11px]">
-                  Education & Experience
-                </h4>
-                <p className="font-medium text-gray-900">
-                  {cvData.education[0]?.degree}
-                </p>
-                <p className="text-gray-500">
-                  {cvData.education[0]?.institution} ({cvData.education[0]?.year})
-                </p>
-              </div>
-            </div>
-            <p className="text-[10px] text-gray-400 mt-4 italic">
-              #cv-printable-area formatted with @media print A4 isolation
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-// Route View Placeholders
+// Route View Placeholders for non-CV routes
 const DashboardView = () => (
   <RoutePlaceholder
     badge="Route 01 / 08"
@@ -250,17 +187,6 @@ const DashboardView = () => (
     description="Holistic command center for AI career trajectory, job market pulse, and real-time fraud alerts."
     icon={LayoutDashboard}
     routePath="/"
-  />
-);
-
-const MyCvView = () => (
-  <RoutePlaceholder
-    badge="Route 02 / 08"
-    title="My CV"
-    description="Curriculum vitae profile builder with ATS scoring and clean A4 printable PDF export."
-    icon={FileText}
-    routePath="/my-cv"
-    isCvView={true}
   />
 );
 
@@ -317,7 +243,7 @@ const InterviewView = () => (
 const RadarProgressView = () => (
   <RoutePlaceholder
     badge="Route 08 / 08"
-    title="Company Radar & Progress"
+    title="Radar & Progress"
     description="Target company hiring radar, tech stack breakdown, and career goal completion analytics."
     icon={Radar}
     routePath="/radar-progress"
@@ -336,7 +262,7 @@ export function App() {
           <main className="flex-1 bg-base-200 min-h-screen p-8 overflow-y-auto">
             <Routes>
               <Route path="/" element={<DashboardView />} />
-              <Route path="/my-cv" element={<MyCvView />} />
+              <Route path="/my-cv" element={<MyCVPage />} />
               <Route path="/career-paths" element={<CareerPathsView />} />
               <Route path="/jobs" element={<JobsView />} />
               <Route path="/skill-gap" element={<SkillGapView />} />
