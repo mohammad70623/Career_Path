@@ -1,0 +1,43 @@
+# ==========================================
+# 1. ENVIRONMENT & SECRETS (CRITICAL)
+# ==========================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# ==========================================
+# 2. PYTHON & FASTAPI (BACKEND)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# ==========================================
+# 3. NODE & REACT VITE (FRONTEND)
+# ==========================================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+
+# ==========================================
+# 4. IDE & OS FILES
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
