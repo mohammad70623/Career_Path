@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState } from 'react';
+import {
+  GLOBAL_LOCATIONS,
+  getCountriesForRegion,
+  getStatesForCountry,
+  getCitiesForState,
+  getDefaultGeoForRegion
+} from '../data/globalLocations';
 
 /**
- * Professional Baseline CV Data Schema with Multi-Level Education Support:
- * fullName, targetRole, email, phone, location,
- * linkedin, github, portfolio, summary,
- * skills (comma-separated string),
- * experience (text/bullets),
- * projects (text/bullets),
- * education: Array of { id, level, major, institution, year, grade },
- * certifications (text/bullets)
+ * Professional Baseline CV Data Schema with Multi-Level Education Support
  */
 export const initialCvData = {
   fullName: 'Mohammad Al-Amin',
@@ -69,13 +69,28 @@ DeepLearning.AI — Deep Learning & Generative AI Specialization (2023)
 Stanford Online — Machine Learning Systems Engineering (2023)`
 };
 
+/**
+ * 10-Point Enterprise Job Filter Baseline
+ */
+export const initialJobFilters = {
+  region: 'Asia',
+  country: 'Bangladesh',
+  state: 'Dhaka Division',
+  city: 'Dhaka',
+  jobType: 'All',
+  employment: 'All',
+  experience: 'All',
+  industry: 'IT & Software',
+  salary: 'Any Salary',
+  workAuth: 'Any'
+};
+
 export const CareerContext = createContext(null);
 
 export const CareerProvider = ({ children }) => {
   // Shared app states
   const [cvData, setCvData] = useState(initialCvData);
-  const [selectedRegion, setSelectedRegion] = useState('South Asia');
-  const [selectedCountry, setSelectedCountry] = useState('Bangladesh');
+  const [jobFilters, setJobFilters] = useState(initialJobFilters);
   const [selectedJob, setSelectedJob] = useState(null);
   const [roadmapSteps, setRoadmapSteps] = useState([]);
   const [applicationDrafts, setApplicationDrafts] = useState([]);
@@ -92,6 +107,54 @@ export const CareerProvider = ({ children }) => {
     setCvData(initialCvData);
   };
 
+  // Helper method to update job filters with intelligent geographic cascading
+  const updateFilter = (key, value) => {
+    setJobFilters((prev) => {
+      if (key === 'region') {
+        const { country, state, city } = getDefaultGeoForRegion(value);
+        return {
+          ...prev,
+          region: value,
+          country,
+          state,
+          city
+        };
+      }
+
+      if (key === 'country') {
+        const states = getStatesForCountry(prev.region, value);
+        const newState = states[0] || '';
+        const cities = getCitiesForState(prev.region, value, newState);
+        const newCity = cities[0] || '';
+        return {
+          ...prev,
+          country: value,
+          state: newState,
+          city: newCity
+        };
+      }
+
+      if (key === 'state') {
+        const cities = getCitiesForState(prev.region, prev.country, value);
+        const newCity = cities[0] || '';
+        return {
+          ...prev,
+          state: value,
+          city: newCity
+        };
+      }
+
+      return {
+        ...prev,
+        [key]: value
+      };
+    });
+  };
+
+  const resetFilters = () => {
+    setJobFilters(initialJobFilters);
+  };
+
   const value = {
     // Complete CV State & handlers
     cvData,
@@ -99,11 +162,17 @@ export const CareerProvider = ({ children }) => {
     updateCvField,
     resetCvData,
 
-    // Regional & Country selection
-    selectedRegion,
-    setSelectedRegion,
-    selectedCountry,
-    setSelectedCountry,
+    // Enterprise 10-Point Job Filters
+    jobFilters,
+    setJobFilters,
+    updateFilter,
+    resetFilters,
+
+    // Backward-compatibility aliases for existing components
+    selectedRegion: jobFilters.region,
+    selectedCountry: jobFilters.country,
+    setSelectedRegion: (r) => updateFilter('region', r),
+    setSelectedCountry: (c) => updateFilter('country', c),
 
     // Job selection & Radar
     selectedJob,

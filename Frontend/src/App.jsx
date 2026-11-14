@@ -19,6 +19,7 @@ import {
 import { CareerProvider, useCareer } from './context/CareerContext';
 import { Sidebar } from './components/Sidebar';
 import { MyCVPage } from './pages/MyCVPage';
+import { CareerPathsPage } from './pages/CareerPathsPage';
 
 /**
  * Reusable luxury-styled placeholder view for testing routing & theme foundation.
@@ -263,7 +264,7 @@ export function App() {
             <Routes>
               <Route path="/" element={<DashboardView />} />
               <Route path="/my-cv" element={<MyCVPage />} />
-              <Route path="/career-paths" element={<CareerPathsView />} />
+              <Route path="/career-paths" element={<CareerPathsPage />} />
               <Route path="/jobs" element={<JobsView />} />
               <Route path="/skill-gap" element={<SkillGapView />} />
               <Route path="/applications" element={<ApplicationsView />} />
