@@ -18,6 +18,7 @@ import {
 
 import { CareerProvider, useCareer } from './context/CareerContext';
 import { Sidebar } from './components/Sidebar';
+import { DashboardPage } from './pages/DashboardPage';
 import { MyCVPage } from './pages/MyCVPage';
 import { CareerPathsPage } from './pages/CareerPathsPage';
 
@@ -262,7 +263,7 @@ export function App() {
           {/* Spacious Main Area */}
           <main className="flex-1 bg-base-200 min-h-screen p-8 overflow-y-auto">
             <Routes>
-              <Route path="/" element={<DashboardView />} />
+              <Route path="/" element={<DashboardPage />} />
               <Route path="/my-cv" element={<MyCVPage />} />
               <Route path="/career-paths" element={<CareerPathsPage />} />
               <Route path="/jobs" element={<JobsView />} />
