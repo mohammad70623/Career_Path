@@ -16,7 +16,12 @@ from app.schemas import (
     CVEnhanceRequest,
     CVEnhanceResponse
 )
-from app.services.cv_parser import extract_text_from_file, parse_cv_text, enhance_cv_section
+from app.services.cv_parser import (
+    extract_text_from_file,
+    parse_cv_text,
+    parse_cv_file,
+    enhance_cv_section
+)
 from app.services.career_graph import predict_career_paths
 
 app = FastAPI(
@@ -82,8 +87,7 @@ async def parse_cv_endpoint(file: UploadFile = File(...)):
 
     try:
         file_bytes = await file.read()
-        raw_text = extract_text_from_file(file_bytes, file.filename)
-        cv_profile = await parse_cv_text(raw_text)
+        cv_profile = await parse_cv_file(file_bytes, file.filename)
         return cv_profile
     except ValueError as ve:
         raise HTTPException(
