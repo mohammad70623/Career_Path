@@ -1,0 +1,140 @@
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+
+# Explicitly load .env from Backend root
+backend_root = Path(__file__).resolve().parent.parent
+load_dotenv(backend_root / ".env")
+
+from app.schemas import (
+    CVProfile,
+    CareerPredictRequest,
+    CareerPredictResponse,
+    CVEnhanceRequest,
+    CVEnhanceResponse
+)
+from app.services.cv_parser import extract_text_from_file, parse_cv_text, enhance_cv_section
+from app.services.career_graph import predict_career_paths
+
+app = FastAPI(
+    title="NextJob AI Career Engine",
+    description="Enterprise FastAPI backend with LangChain CV Parser and LangGraph Career Path Predictor",
+    version="1.0.0"
+)
+
+# Configure CORS for local development across Vite ports
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "http://localhost:5176",
+    "http://127.0.0.1:5176",
+    "http://localhost:5177",
+    "http://127.0.0.1:5177",
+    "http://localhost:5178",
+    "http://127.0.0.1:5178"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/api/health")
+async def health_check():
+    """
+    Health check verifying API readiness and AI engine configurations.
+    """
+    return {
+        "status": "ok",
+        "engines": ["LangGraph", "OpenAI", "Tavily"],
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
+        "tavily_configured": bool(os.getenv("TAVILY_API_KEY"))
+    }
+
+@app.post("/api/cv/parse", response_model=CVProfile)
+async def parse_cv_endpoint(file: UploadFile = File(...)):
+    """
+    Accepts an uploaded PDF or DOCX file, extracts text, and parses it into a structured CVProfile.
+    """
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must have a valid filename."
+        )
+
+    ext = file.filename.lower().split('.')[-1]
+    if ext not in ('pdf', 'docx', 'doc'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF and DOCX files are supported."
+        )
+
+    try:
+        file_bytes = await file.read()
+        raw_text = extract_text_from_file(file_bytes, file.filename)
+        cv_profile = await parse_cv_text(raw_text)
+        return cv_profile
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(ve)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error parsing resume with AI engine: {str(e)}"
+        )
+
+@app.post("/api/cv/enhance", response_model=CVEnhanceResponse)
+async def enhance_cv_endpoint(req: CVEnhanceRequest):
+    """
+    Rewrites and enhances a resume section (summary or experience) using executive action verbs and STAR metrics.
+    """
+    if not req.content or not req.content.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Content to enhance cannot be empty."
+        )
+
+    try:
+        enhanced = await enhance_cv_section(
+            section_type=req.section_type,
+            content=req.content,
+            target_role=req.target_role
+        )
+        return CVEnhanceResponse(enhanced_text=enhanced)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error enhancing CV section: {str(e)}"
+        )
+
+@app.post("/api/career/predict", response_model=CareerPredictResponse)
+async def predict_career_endpoint(req: CareerPredictRequest):
+    """
+    Executes the 3-node LangGraph workflow combining candidate profile analysis,
+    Tavily regional market intelligence, and structured path generation.
+    """
+    try:
+        response = await predict_career_paths(req.cv, req.filters)
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error running career prediction graph: {str(e)}"
+        )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
