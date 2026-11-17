@@ -576,8 +576,18 @@ export const analyzeUniversalCV = async ({ cv, mode = 'general', sector = 'IT & 
       job_description: jobDescription
     });
 
-    if (response.data && response.data.cvQualityScore) {
-      return response.data;
+    if (response.data && (response.data.cvQualityScore || response.data.overallQualityScore)) {
+      const d = response.data;
+      return {
+        ...d,
+        cvQualityScore: d.cvQualityScore || d.overallQualityScore,
+        overallConfidence: d.overallConfidence || d.confidenceScore || 94,
+        sector: d.sector || d.detectedSector || sector,
+        mode: d.mode || mode,
+        jdMatchScore: d.jdMatchScore ?? d.jdMatchResult?.jdMatchScore ?? null,
+        eligibilityTier: d.eligibilityTier || d.jdMatchResult?.eligibilityStatus || null,
+        jdAnalysisNotes: d.jdAnalysisNotes || d.jdMatchResult?.summary || null
+      };
     }
 
     return runClientUniversalCvAnalysis({ cv, mode, sector, jobDescription });
