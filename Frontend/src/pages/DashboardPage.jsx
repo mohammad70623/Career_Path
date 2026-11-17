@@ -232,7 +232,7 @@ const getRecentJobChecks = (country, targetRole = 'Software Engineer') => {
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
-  const { cvData, jobFilters, roadmapSteps } = useCareer();
+  const { cvData, jobFilters, roadmapSteps, cvAnalysis } = useCareer();
 
   // Dynamic ATS CV Strength Score Calculation
   const calculateAtsScore = () => {
@@ -339,15 +339,19 @@ export const DashboardPage = () => {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-2xl font-bold tracking-tight text-primary">
-              {atsScore}
+              {cvAnalysis?.cvQualityScore || atsScore}
             </span>
             <span className="text-xs font-semibold text-base-content/50">/ 100</span>
             <span className="badge badge-xs bg-accent/10 text-accent font-semibold ml-auto">
-              Strong Profile
+              {(cvAnalysis?.cvQualityScore || atsScore) >= 90
+                ? 'Executive Grade'
+                : (cvAnalysis?.cvQualityScore || atsScore) >= 80
+                ? 'Strong Profile'
+                : 'Needs Optimization'}
             </span>
           </div>
           <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            Ready for applicant tracking systems & recruiter review
+            {cvAnalysis?.sector ? `${cvAnalysis.sector} • ` : ''}Ready for applicant tracking systems & recruiter review
           </p>
         </div>
 

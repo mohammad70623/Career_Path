@@ -29,6 +29,7 @@ import {
 
 import { useCareer } from '../context/CareerContext';
 import { parseCVFile, enhanceCVSection } from '../services/api';
+import { CVAnalysisPanel } from '../components/cv/CVAnalysisPanel';
 
 const DEGREE_LEVELS = [
   "Ph.D. / Doctorate",
@@ -73,10 +74,13 @@ const calculateAtsScore = (vals, educationList = []) => {
 };
 
 export const MyCVPage = () => {
-  const { cvData, setCvData, selectedCountry, selectedRegion } = useCareer();
+  const { cvData, setCvData, selectedCountry, selectedRegion, cvAnalysis } = useCareer();
 
   // Mode Switcher: "manual" vs "upload" (default "manual")
   const [activeTab, setActiveTab] = useState('manual');
+
+  // Right-hand Column Switcher: "preview" vs "analysis" (default "preview")
+  const [rightPanelTab, setRightPanelTab] = useState('preview');
 
   // Upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -503,8 +507,16 @@ Senior AI & Data Systems Engineer | Quantum Analytics Asia | 2021 - 2023 | Dhaka
           </div>
 
           <button
-            onClick={handlePrintPdf}
+            onClick={() => setRightPanelTab('analysis')}
             className="btn btn-sm btn-primary gap-1.5 shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-secondary" />
+            <span>🔍 Analyze & Fix CV</span>
+          </button>
+
+          <button
+            onClick={handlePrintPdf}
+            className="btn btn-sm btn-outline border-base-300 text-primary hover:bg-base-200 gap-1.5 shadow-2xs"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Download PDF</span>
@@ -1114,45 +1126,77 @@ Senior AI & Data Systems Engineer | Quantum Analytics Asia | 2021 - 2023 | Dhaka
         </div>
 
         {/* ============================================================== */}
-        {/* RIGHT COLUMN: Live A4 Paper Preview (lg:col-span-6)            */}
+        {/* RIGHT COLUMN: Dual Mode (A4 Preview & AI CV Analysis)          */}
         {/* ============================================================== */}
         <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-6">
-          {/* Sticky Top Toolbar */}
-          <div className="flex items-center justify-between p-3.5 bg-base-100 border border-base-300 rounded-xl shadow-2xs">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
-              </span>
-              <span className="text-xs font-medium text-base-content/75">
-                Your CV, updated as you type
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Dynamic ATS Readiness Pill */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent font-semibold text-xs">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{atsScore}/100 ATS Ready</span>
-              </div>
+          {/* Sticky Top Toolbar with 2-Tab Segmented Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-base-100 border border-base-300 rounded-xl shadow-2xs">
+            {/* 2-Tab Segmented Switcher */}
+            <div className="flex bg-base-200 p-1 rounded-xl border border-base-300/80">
+              <button
+                type="button"
+                onClick={() => setRightPanelTab('preview')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  rightPanelTab === 'preview'
+                    ? 'bg-base-100 text-primary shadow-xs'
+                    : 'text-base-content/65 hover:text-base-content'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-primary" />
+                <span>A4 Live Preview</span>
+              </button>
 
               <button
                 type="button"
-                onClick={handlePrintPdf}
-                className="btn btn-xs btn-outline border-base-300 text-primary hover:bg-primary hover:text-primary-content gap-1 font-semibold"
+                onClick={() => setRightPanelTab('analysis')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  rightPanelTab === 'analysis'
+                    ? 'bg-primary text-primary-content shadow-xs'
+                    : 'text-base-content/65 hover:text-base-content'
+                }`}
               >
-                <Printer className="w-3 h-3" />
-                <span>Download as PDF</span>
+                <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                <span>AI CV Analysis & Solutions</span>
+                {cvAnalysis?.cvQualityScore && (
+                  <span className="badge badge-xs bg-accent text-accent-content font-mono font-bold px-1.5">
+                    {cvAnalysis.cvQualityScore}
+                  </span>
+                )}
               </button>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end">
+              {/* Dynamic ATS Readiness Pill */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent font-semibold text-xs">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{cvAnalysis?.cvQualityScore || atsScore}/100 Quality</span>
+              </div>
+
+              {rightPanelTab === 'preview' && (
+                <button
+                  type="button"
+                  onClick={handlePrintPdf}
+                  className="btn btn-xs btn-outline border-base-300 text-primary hover:bg-primary hover:text-primary-content gap-1 font-semibold"
+                >
+                  <Printer className="w-3 h-3" />
+                  <span>PDF</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Crisp Pure-White A4 Resume Paper Container */}
-          <div
-            id="cv-printable-area"
-            className="bg-white border border-base-300 rounded-2xl p-8 shadow-sm text-gray-900 transition-all font-sans"
-            style={{ minHeight: '842px' }}
-          >
+          {/* Conditional View: AI Analysis Panel vs Printable A4 Sheet */}
+          {rightPanelTab === 'analysis' ? (
+            <div className="max-h-[calc(100vh-140px)] overflow-y-auto pr-1">
+              <CVAnalysisPanel />
+            </div>
+          ) : (
+            /* Crisp Pure-White A4 Resume Paper Container */
+            <div
+              id="cv-printable-area"
+              className="bg-white border border-base-300 rounded-2xl p-8 shadow-sm text-gray-900 transition-all font-sans"
+              style={{ minHeight: '842px' }}
+            >
             {/* Header: Name, Target Role, Contact & Links */}
             <div className="border-b border-gray-200 pb-5 mb-5 text-center sm:text-left">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
@@ -1379,9 +1423,10 @@ Senior AI & Data Systems Engineer | Quantum Analytics Asia | 2021 - 2023 | Dhaka
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
+  </div>
   );
 };
 

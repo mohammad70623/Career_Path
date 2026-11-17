@@ -8,6 +8,26 @@ import {
 } from '../data/globalLocations';
 
 /**
+ * 14 Universal Industry Sectors for Multi-Sector AI CV Analysis
+ */
+export const UNIVERSAL_SECTORS = [
+  'IT & Software',
+  'Healthcare',
+  'Banking & Finance',
+  'Engineering',
+  'Education',
+  'Legal',
+  'Business & Management',
+  'Research & Science',
+  'Hospitality',
+  'Manufacturing',
+  'Marketing & Sales',
+  'Agriculture & Environment',
+  'Logistics & Supply Chain',
+  'Design & Creative'
+];
+
+/**
  * Professional Baseline CV Data Schema with Multi-Level Education Support
  */
 export const initialCvData = {
@@ -95,6 +115,12 @@ export const CareerProvider = ({ children }) => {
   const [roadmapSteps, setRoadmapSteps] = useState([]);
   const [applicationDrafts, setApplicationDrafts] = useState([]);
 
+  // Universal Multi-Sector AI CV Analysis & Optimization states
+  const [cvAnalysis, setCvAnalysis] = useState(null);
+  const [analysisMode, setAnalysisMode] = useState('general'); // 'general' | 'jd_match'
+  const [targetSector, setTargetSector] = useState('IT & Software');
+  const [jobDescriptionText, setJobDescriptionText] = useState('');
+
   // Helper method to safely update any top-level key of cvData
   const updateCvField = (field, value) => {
     setCvData((prev) => ({
@@ -103,8 +129,45 @@ export const CareerProvider = ({ children }) => {
     }));
   };
 
+  // One-click apply solution directly to CV section (summary, experience, projects, skills)
+  const applyCvSolution = ({ section, replacementText }) => {
+    if (!section || replacementText === undefined) return;
+    setCvData((prev) => ({
+      ...prev,
+      [section]: replacementText
+    }));
+  };
+
+  // Add missing critical skill directly to CV skills list
+  const addSkillToCv = (newSkill) => {
+    if (!newSkill || typeof newSkill !== 'string') return;
+    const trimmed = newSkill.trim();
+    if (!trimmed) return;
+
+    setCvData((prev) => {
+      const currentSkills = typeof prev.skills === 'string'
+        ? prev.skills.split(',').map((s) => s.trim()).filter(Boolean)
+        : Array.isArray(prev.skills)
+        ? [...prev.skills]
+        : [];
+
+      // Avoid case-insensitive duplicate
+      const alreadyExists = currentSkills.some(
+        (s) => s.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (alreadyExists) return prev;
+
+      const updatedSkills = [...currentSkills, trimmed].join(', ');
+      return {
+        ...prev,
+        skills: updatedSkills
+      };
+    });
+  };
+
   const resetCvData = () => {
     setCvData(initialCvData);
+    setCvAnalysis(null);
   };
 
   // Helper method to update job filters with intelligent geographic cascading
@@ -160,7 +223,19 @@ export const CareerProvider = ({ children }) => {
     cvData,
     setCvData,
     updateCvField,
+    applyCvSolution,
+    addSkillToCv,
     resetCvData,
+
+    // Universal Multi-Sector AI CV Analysis & Optimization State
+    cvAnalysis,
+    setCvAnalysis,
+    analysisMode,
+    setAnalysisMode,
+    targetSector,
+    setTargetSector,
+    jobDescriptionText,
+    setJobDescriptionText,
 
     // Enterprise 10-Point Job Filters
     jobFilters,
