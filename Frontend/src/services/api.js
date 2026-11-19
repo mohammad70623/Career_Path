@@ -72,12 +72,15 @@ export const enhanceCVSection = async (sectionType, content, targetRole = '') =>
 };
 
 /**
- * Prepares and normalizes CV data for backend endpoints.
- * Symmetrically serializes structured experience and project arrays into standard strings,
- * while preserving experienceList, projectsList, and rawText.
+ * Normalizes and serializes CV data for backend endpoints.
+ * Converts experience and projects arrays into clean readable text strings,
+ * while also attaching experienceList, projectsList, and rawText.
+ * @param {Object} cv - Raw or structured CV data
+ * @param {Object} [uploadedFile] - Optional uploaded file record with rawText
+ * @returns {Object} Clean payload matching CVProfile backend schema
  */
-export const formatCvForBackend = (cv) => {
-  if (!cv) return cv;
+export const serializeCVForBackend = (cv, uploadedFile = null) => {
+  if (!cv) return {};
 
   const formattedExp = Array.isArray(cv.experience)
     ? cv.experience
@@ -87,7 +90,7 @@ export const formatCvForBackend = (cv) => {
         })
         .filter(Boolean)
         .join('\n\n')
-    : (cv.experience || '');
+    : (typeof cv.experience === 'string' ? cv.experience : '');
 
   const formattedProj = Array.isArray(cv.projects)
     ? cv.projects
@@ -101,31 +104,69 @@ export const formatCvForBackend = (cv) => {
         })
         .filter(Boolean)
         .join('\n\n')
-    : (cv.projects || '');
+    : (typeof cv.projects === 'string' ? cv.projects : '');
+
+  const formattedSkills = Array.isArray(cv.skills)
+    ? cv.skills.join(', ')
+    : (typeof cv.skills === 'string' ? cv.skills : '');
+
+  const formattedCerts = Array.isArray(cv.certifications)
+    ? cv.certifications.join('\n')
+    : (typeof cv.certifications === 'string' ? cv.certifications : '');
+
+  const formattedEdu = Array.isArray(cv.education)
+    ? cv.education.map((e) => ({
+        level: e.level || "B.Sc. / Bachelor's (Honours)",
+        major: e.major || '',
+        institution: e.institution || '',
+        year: e.year || '',
+        grade: e.grade || ''
+      }))
+    : [];
+
+  const rawExtractedText = uploadedFile?.rawText || cv.rawText || '';
 
   return {
     ...cv,
+    fullName: cv.fullName || 'Candidate',
+    targetRole: cv.targetRole || 'Professional Specialist',
+    email: cv.email || '',
+    phone: cv.phone || '',
+    location: cv.location || '',
+    linkedin: cv.linkedin || '',
+    github: cv.github || '',
+    portfolio: cv.portfolio || '',
+    summary: cv.summary || '',
+    skills: formattedSkills,
     experience: formattedExp,
     projects: formattedProj,
+    education: formattedEdu,
+    certifications: formattedCerts,
+    rawText: rawExtractedText,
     experienceList: Array.isArray(cv.experience) ? cv.experience : (cv.experienceList || []),
-    projectsList: Array.isArray(cv.projects) ? cv.projects : (cv.projectsList || []),
-    rawText: cv.rawText || ''
+    projectsList: Array.isArray(cv.projects) ? cv.projects : (cv.projectsList || [])
   };
 };
+
+/**
+ * Backward-compatibility alias for serializeCVForBackend
+ */
+export const formatCvForBackend = serializeCVForBackend;
 
 /**
  * Executes the LangGraph 3-node prediction workflow on FastAPI.
  * Falls back seamlessly to dynamic client-side all-department prediction if the backend is booting or offline.
  * @param {Object} cv - CVProfile object
  * @param {Object} filters - JobFilters object
+ * @param {Object} [uploadedFile] - Optional uploaded file record with rawText
  * @returns {Promise<Object>} CareerPredictResponse ({ detectedDiscipline, academicEligibilityNote, candidateSummary, marketInsight, paths })
  */
-export const predictCareerPaths = async (cv, filters) => {
+export const predictCareerPaths = async (cv, filters, uploadedFile = null) => {
   try {
-    const payloadCv = formatCvForBackend(cv);
+    const payloadCv = serializeCVForBackend(cv, uploadedFile);
     const response = await apiClient.post('/api/career/predict', {
       cv: payloadCv,
-      filters
+      filters: filters || {}
     });
 
     if (response.data && response.data.paths && response.data.paths.length > 0) {
@@ -907,12 +948,12 @@ NextGen Job Scraper & Scam Verifier | Stack: Python, BeautifulSoup, Tavily API, 
 /**
  * Executes Universal Multi-Sector AI CV Analysis & Optimization.
  * Calls backend POST /api/cv/analyze, falling back seamlessly to deterministic client-side analysis.
- * @param {Object} params - { cv, mode, sector, jobDescription }
+ * @param {Object} params - { cv, mode, sector, jobDescription, uploadedFile }
  * @returns {Promise<Object>} complete analysis report with scores, audit matrix, gaps, and ready-to-apply solutions
  */
-export const analyzeUniversalCV = async ({ cv, mode = 'general', sector = 'IT & Software', jobDescription = '' }) => {
+export const analyzeUniversalCV = async ({ cv, mode = 'general', sector = 'IT & Software', jobDescription = '', uploadedFile = null }) => {
   try {
-    const payloadCv = formatCvForBackend(cv);
+    const payloadCv = serializeCVForBackend(cv, uploadedFile);
     const response = await apiClient.post('/api/cv/analyze', {
       cv: payloadCv,
       mode,
@@ -945,13 +986,14 @@ export const analyzeUniversalCV = async ({ cv, mode = 'general', sector = 'IT & 
 /**
  * Universal CV Analysis alias supporting analyzeCVUniversal(cvData, config) signature
  * @param {Object} cvData - Full CV data object
- * @param {Object} config - { mode, sector, jobDescription }
+ * @param {Object} config - { mode, sector, jobDescription, uploadedFile }
  */
 export const analyzeCVUniversal = async (cvData, config = {}) => {
   const mode = config.mode || 'general';
   const sector = config.sector || 'IT & Software';
   const jobDescription = config.jobDescription || config.job_description || '';
-  return analyzeUniversalCV({ cv: cvData, mode, sector, jobDescription });
+  const uploadedFile = config.uploadedFile || null;
+  return analyzeUniversalCV({ cv: cvData, mode, sector, jobDescription, uploadedFile });
 };
 
 export default {
@@ -959,6 +1001,8 @@ export default {
   parseCVFile,
   enhanceCVSection,
   predictCareerPaths,
+  serializeCVForBackend,
+  formatCvForBackend,
   analyzeUniversalCV,
   analyzeCVUniversal,
   runClientUniversalCvAnalysis,

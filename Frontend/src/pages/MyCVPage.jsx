@@ -98,7 +98,10 @@ export const MyCVPage = () => {
     setCvAnalysis,
     analysisMode,
     targetSector,
-    jobDescriptionText
+    jobDescriptionText,
+    invalidateCvCaches,
+    setCareerTrajectories,
+    cvVersion
   } = useCareer();
 
   // Mode Switcher: "manual" vs "upload" (default "manual")
@@ -249,6 +252,11 @@ export const MyCVPage = () => {
       education: data.education || [],
       rawText: cvData.rawText || ''
     };
+    if (invalidateCvCaches) {
+      invalidateCvCaches();
+    } else if (setCareerTrajectories) {
+      setCareerTrajectories(null);
+    }
     setCvData(updated);
     toast.success('CV successfully saved & synchronized across NextJob!', {
       icon: '✨'
@@ -455,6 +463,14 @@ export const MyCVPage = () => {
         url: blobUrl,
         rawText: rawExtractedText
       };
+
+      // Invalidate stale recommendations & cache for previous CV
+      if (invalidateCvCaches) {
+        invalidateCvCaches();
+      } else if (setCareerTrajectories) {
+        setCareerTrajectories(null);
+      }
+
       setUploadedFile(fileRecord);
       setPreviewView('uploaded');
 
@@ -510,7 +526,8 @@ export const MyCVPage = () => {
       analyzeCVUniversal(updatedCv, {
         mode: analysisMode,
         sector: targetSector,
-        jobDescription: jobDescriptionText
+        jobDescription: jobDescriptionText,
+        uploadedFile: fileRecord
       }).then((newAnalysis) => {
         if (newAnalysis) setCvAnalysis(newAnalysis);
       }).catch((e) => console.warn('[Auto-Analysis notice]', e));

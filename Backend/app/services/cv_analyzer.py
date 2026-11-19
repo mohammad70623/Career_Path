@@ -101,31 +101,33 @@ def run_deterministic_validation(cv: CVProfile) -> Dict[str, Any]:
     Step 1: Deterministic Python Pre-Audit.
     Inspects actual CV completeness, coordinates, keyword density, and STAR metrics.
     """
-    has_fullName = bool(cv.fullName and len(cv.fullName.strip()) >= 2)
-    has_targetRole = bool(cv.targetRole and len(cv.targetRole.strip()) >= 2)
-    has_email = bool(cv.email and "@" in cv.email)
-    has_phone = bool(cv.phone and len(cv.phone.strip()) >= 6)
-    has_location = bool(cv.location and len(cv.location.strip()) >= 3)
-    has_linkedin = bool(cv.linkedin and "linkedin" in cv.linkedin.lower())
-    has_github = bool(cv.github and "github" in cv.github.lower())
-    has_portfolio = bool(cv.portfolio and len(cv.portfolio.strip()) >= 5)
+    clean = cv.to_clean_text()
+    has_fullName = bool(clean["fullName"] and len(clean["fullName"]) >= 2)
+    has_targetRole = bool(clean["targetRole"] and len(clean["targetRole"]) >= 2)
+    has_email = bool(clean["email"] and "@" in clean["email"])
+    has_phone = bool(clean["phone"] and len(clean["phone"]) >= 6)
+    has_location = bool(clean["location"] and len(clean["location"]) >= 3)
+    has_linkedin = bool(clean["linkedin"] and "linkedin" in clean["linkedin"].lower())
+    has_github = bool(clean["github"] and "github" in clean["github"].lower())
+    has_portfolio = bool(clean["portfolio"] and len(clean["portfolio"]) >= 5)
 
-    summary_len = len(cv.summary.strip()) if cv.summary else 0
-    skills_list = [s.strip() for s in (cv.skills or "").split(",") if s.strip()]
+    summary_len = len(clean["summary"])
+    skills_list = cv.get_skills_list()
 
-    exp_text = cv.experience if isinstance(cv.experience, str) else ""
-    proj_text = cv.projects if isinstance(cv.projects, str) else ""
-    raw_text = cv.rawText or ""
+    exp_text = clean["experience"]
+    proj_text = clean["projects"]
+    raw_text = clean["rawText"]
 
     # Metric detection (numbers, %, $, sub-Xms, etc.)
     metric_pattern = re.compile(r'(\d+[%kKmM]?|\$\d+|\d+\+?|sub-\d+ms|\b\d{2,}\b)')
     exp_metrics = metric_pattern.findall(f"{exp_text} {raw_text}")
     proj_metrics = metric_pattern.findall(proj_text)
 
-    education_count = len(cv.education) if cv.education else 0
+    edu_items = cv.get_education_items()
+    education_count = len(edu_items)
     has_higher_ed = any(
         e.level and any(lvl in e.level.lower() for lvl in ["b.sc", "bachelor", "master", "m.sc", "ph.d", "doctorate", "diploma"])
-        for e in (cv.education or [])
+        for e in edu_items
     )
 
     action_verbs = re.findall(
@@ -161,8 +163,10 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
     sector = req.sector if req.sector in SECTOR_TAXONOMY else "IT & Software"
     sec_info = SECTOR_TAXONOMY[sector]
     cv = req.cv
+    clean = cv.to_clean_text()
+    edu_items = cv.get_education_items()
 
-    cv_text = f"{cv.summary} {cv.skills} {cv.experience} {cv.projects} {cv.rawText or ''}".lower()
+    cv_text = f"{clean['summary']} {clean['skills']} {clean['experience']} {clean['projects']} {clean['rawText']}".lower()
     matched = [s for s in sec_info["critical_skills"] if s.lower() in cv_text]
     missing = [s for s in sec_info["critical_skills"] if s.lower() not in cv_text]
 
@@ -172,9 +176,9 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
     # 8 Criteria strictly summing to overallQualityScore (out of 100)
     c1 = 14 if val["summary_char_count"] > 60 else (12 if val["summary_char_count"] > 20 else 8) # Content Quality (15)
     c2 = 14 if len(matched) >= 4 else (12 if len(matched) >= 2 else 9)                          # Skills & Competencies (15)
-    c3 = 19 if val["experience_metric_matches"] >= 3 else (15 if len(cv.experience or "") > 80 else 11) # Experience (20)
+    c3 = 19 if val["experience_metric_matches"] >= 3 else (15 if len(clean["experience"]) > 80 else 11) # Experience (20)
     c4 = 10 if val["education_count"] >= 2 else (8 if val["education_count"] == 1 else 6)        # Education (10)
-    c5 = 9 if val["project_metric_matches"] >= 1 else (7 if len(cv.projects or "") > 40 else 5)   # Projects (10)
+    c5 = 9 if val["project_metric_matches"] >= 1 else (7 if len(clean["projects"]) > 40 else 5)   # Projects (10)
     c6 = 9 if len(matched) >= 3 else 7                                                           # Keyword Optimization (10)
     c7 = 10 if (val["has_email"] and val["has_phone"]) else 8                                    # ATS Compatibility (10)
     c8 = 9 if (val["has_linkedin"] or val["has_github"] or val["has_portfolio"]) else 7         # Presentation (10)
@@ -236,7 +240,7 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
             score=c4,
             confidence=96,
             summary=f"{val['education_count']} academic credential tiers recorded with institutional accreditation.",
-            evidenceQuotes=[f"{e.level} in {e.major} at {e.institution}" for e in (cv.education or [])[:2]],
+            evidenceQuotes=[f"{e.level} in {e.major} at {e.institution}" for e in edu_items[:2]],
             issues=[] if val["education_count"] >= 1 else ["No educational history entries provided."],
             actionableSolution="Academic records are comprehensive and well-structured."
         ),
@@ -247,10 +251,10 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
             score=c2,
             confidence=95,
             summary=f"Found {val['skills_count']} technical tools with {len(matched)} direct sector alignments.",
-            evidenceQuotes=[(cv.skills or "")[:120]],
+            evidenceQuotes=[clean["skills"][:120]],
             issues=[f"Missing high-demand sector tools: {', '.join(missing[:3])}"] if missing else [],
             actionableSolution=f"Inject key sector competencies ({', '.join(missing[:3])}) into your core skills inventory.",
-            proposedRewrite=(cv.skills or "") + (f", {', '.join(missing[:3])}" if missing else ""),
+            proposedRewrite=clean["skills"] + (f", {', '.join(missing[:3])}" if missing else ""),
             targetField="skills"
         ),
         CoreModuleAuditItem(
@@ -260,10 +264,10 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
             score=c3,
             confidence=92,
             summary="Chronological work history demonstrating progressive responsibility and technical tenure.",
-            evidenceQuotes=[(cv.experience or "")[:140]],
+            evidenceQuotes=[clean["experience"][:140]],
             issues=["Secondary role bullets could include greater throughput metrics and infrastructure cost benchmarks."] if c3 < 18 else [],
             actionableSolution="Apply the STAR methodology with explicit percentage gains and infrastructure cost savings.",
-            proposedRewrite=cv.experience or "",
+            proposedRewrite=clean["experience"],
             targetField="experience"
         ),
         CoreModuleAuditItem(
@@ -273,10 +277,10 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
             score=c5,
             confidence=90,
             summary="Real-world projects showcase end-to-end production architecture and deployment stacks.",
-            evidenceQuotes=[(cv.projects or "")[:140]],
+            evidenceQuotes=[clean["projects"][:140]],
             issues=["Highlight user concurrency metrics and container cluster specifications."] if c5 < 8 else [],
             actionableSolution="Specify requests-per-second (RPS) throughput and Docker/Kubernetes container orchestration.",
-            proposedRewrite=cv.projects or "",
+            proposedRewrite=clean["projects"],
             targetField="projects"
         ),
         CoreModuleAuditItem(
@@ -286,7 +290,7 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
             score=8 if val["experience_metric_matches"] >= 2 else 6,
             confidence=93,
             summary=f"Identified {val['experience_metric_matches']} numeric metric signals (latency, recall, cost, throughput).",
-            evidenceQuotes=[(cv.experience or "")[:100]],
+            evidenceQuotes=[clean["experience"][:100]],
             issues=[] if val["experience_metric_matches"] >= 2 else ["Work experience lacks quantifiable percentage outcomes."],
             actionableSolution="Quantify operational accomplishments with concrete % uplift, volume, or savings."
         ),
@@ -487,19 +491,22 @@ async def analyze_cv_profile(req: CVAnalyzeRequest) -> CVAnalyzeResponse:
             f"   If mode is 'jd_match' and job_description is provided, compute an accurate 'jdMatchResult' comparing candidate competencies against the provided requirements."
         )
 
+        clean = req.cv.to_clean_text()
+        edu_items = req.cv.get_education_items()
+
         user_content = (
             f"--- CANDIDATE CV PROFILE ---\n"
-            f"Full Name: {req.cv.fullName}\n"
-            f"Target Role: {req.cv.targetRole}\n"
-            f"Email: {req.cv.email} | Phone: {req.cv.phone} | Location: {req.cv.location}\n"
-            f"LinkedIn: {req.cv.linkedin} | GitHub: {req.cv.github} | Portfolio: {req.cv.portfolio}\n"
-            f"Summary: {req.cv.summary}\n"
-            f"Skills: {req.cv.skills}\n"
-            f"Experience: {req.cv.experience}\n"
-            f"Projects: {req.cv.projects}\n"
-            f"Education: {[{'level': e.level, 'major': e.major, 'institution': e.institution, 'year': e.year, 'grade': e.grade} for e in req.cv.education]}\n"
-            f"Certifications: {req.cv.certifications}\n"
-            f"Raw Document Text (Verbatim): {req.cv.rawText[:3000] if req.cv.rawText else 'N/A'}\n\n"
+            f"Full Name: {clean['fullName']}\n"
+            f"Target Role: {clean['targetRole']}\n"
+            f"Email: {clean['email']} | Phone: {clean['phone']} | Location: {clean['location']}\n"
+            f"LinkedIn: {clean['linkedin']} | GitHub: {clean['github']} | Portfolio: {clean['portfolio']}\n"
+            f"Summary: {clean['summary']}\n"
+            f"Skills: {clean['skills']}\n"
+            f"Experience: {clean['experience']}\n"
+            f"Projects: {clean['projects']}\n"
+            f"Education: {[{'level': e.level, 'major': e.major, 'institution': e.institution, 'year': e.year, 'grade': e.grade} for e in edu_items]}\n"
+            f"Certifications: {clean['certifications']}\n"
+            f"Raw Document Text (Verbatim): {clean['rawText'][:3000] if clean['rawText'] else 'N/A'}\n\n"
             f"--- DETERMINISTIC VALIDATION SIGNALS ---\n"
             f"{validation}\n\n"
             f"--- SECTOR BENCHMARK CRITERIA ({sector}) ---\n"

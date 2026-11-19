@@ -242,12 +242,23 @@ export const CareerProvider = ({ children }) => {
   const [targetSector, setTargetSector] = useState('IT & Software');
   const [jobDescriptionText, setJobDescriptionText] = useState('');
 
+  // Dynamic CV Versioning to automatically invalidate stale caches
+  const [cvVersion, setCvVersion] = useState(Date.now());
+
+  // Invalidate stale career trajectories and CV audit caches
+  const invalidateCvCaches = () => {
+    setCareerTrajectories(null);
+    setCvAnalysis(null);
+    setCvVersion(Date.now());
+  };
+
   // Helper method to safely update any top-level key of cvData
   const updateCvField = (field, value) => {
     setCvData((prev) => ({
       ...prev,
       [field]: value
     }));
+    invalidateCvCaches();
   };
 
   // One-click apply solution directly to CV section (summary, experience, projects, skills)
@@ -273,6 +284,7 @@ export const CareerProvider = ({ children }) => {
         [section]: replacementText
       };
     });
+    invalidateCvCaches();
   };
 
   // Add missing critical skill directly to CV skills list
@@ -300,6 +312,7 @@ export const CareerProvider = ({ children }) => {
         skills: updatedSkills
       };
     });
+    invalidateCvCaches();
   };
 
   const resetCvData = () => {
@@ -307,6 +320,7 @@ export const CareerProvider = ({ children }) => {
     setUploadedFile(null);
     setCvAnalysis(null);
     setCareerTrajectories(null);
+    setCvVersion(Date.now());
   };
 
   // Helper method to update job filters with intelligent geographic cascading
@@ -366,13 +380,20 @@ export const CareerProvider = ({ children }) => {
     addSkillToCv,
     resetCvData,
 
+    // Dynamic CV Versioning & Cache Invalidation
+    cvVersion,
+    setCvVersion,
+    invalidateCvCaches,
+
     // Uploaded Original Document State
     uploadedFile,
     setUploadedFile,
 
-    // Dynamic Career Trajectories
+    // Dynamic Career Trajectories (with careerPaths alias)
     careerTrajectories,
     setCareerTrajectories,
+    careerPaths: careerTrajectories,
+    setCareerPaths: setCareerTrajectories,
 
     // Dynamic Multi-Entry Experience & Project Formatters
     formatExperienceToString,

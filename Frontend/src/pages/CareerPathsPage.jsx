@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -34,13 +34,16 @@ export const CareerPathsPage = () => {
   const navigate = useNavigate();
   const {
     cvData,
+    uploadedFile,
     jobFilters,
     careerTrajectories,
-    setCareerTrajectories
+    setCareerTrajectories,
+    cvVersion
   } = useCareer();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState('all');
+  const lastFetchedVersion = useRef(null);
 
   // Trigger live all-department career prediction
   const handleGeneratePaths = async () => {
@@ -48,7 +51,7 @@ export const CareerPathsPage = () => {
     const toastId = toast.loading('Synthesizing universal all-department trajectory & Tavily live market data...', { id: 'career-pred' });
 
     try {
-      const response = await predictCareerPaths(cvData, jobFilters);
+      const response = await predictCareerPaths(cvData, jobFilters, uploadedFile);
 
       if (response && response.paths && response.paths.length > 0) {
         // Enforce strict highest-to-lowest sorting by matchScore
@@ -64,6 +67,7 @@ export const CareerPathsPage = () => {
         };
 
         setCareerTrajectories(updatedResult);
+        lastFetchedVersion.current = cvVersion;
         toast.success(`Generated ${sortedPaths.length} ranked trajectories across ${response.detectedDiscipline || 'your discipline'}!`, {
           id: toastId,
           icon: '✨'
@@ -79,12 +83,19 @@ export const CareerPathsPage = () => {
     }
   };
 
-  // Automatically generate on initial mount if trajectories have not been loaded yet
+  // Automatically fetch fresh career recommendations whenever CV is updated or uploaded (cvVersion changes)
   useEffect(() => {
-    if (!careerTrajectories || !careerTrajectories.paths || careerTrajectories.paths.length === 0) {
+    const needsGeneration =
+      !careerTrajectories ||
+      !careerTrajectories.paths ||
+      careerTrajectories.paths.length === 0 ||
+      lastFetchedVersion.current !== cvVersion;
+
+    if (needsGeneration) {
+      lastFetchedVersion.current = cvVersion;
       handleGeneratePaths();
     }
-  }, []);
+  }, [cvVersion, careerTrajectories]);
 
   const paths = careerTrajectories?.paths || [];
   const detectedDiscipline = careerTrajectories?.detectedDiscipline || 'Universal Cross-Disciplinary Systems';

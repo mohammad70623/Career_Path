@@ -24,10 +24,11 @@ def detect_academic_standing(cv: CVProfile) -> tuple[bool, str]:
     Evaluates candidate education records for high distinction, honours, and CGPA metrics.
     Returns (has_academic_excellence, eligibility_note).
     """
-    if not cv.education:
+    edu_items = cv.get_education_items()
+    if not edu_items:
         return False, "Academic credentials not specified on current CV profile."
 
-    highest_edu = cv.education[0]
+    highest_edu = edu_items[0]
     grade_str = highest_edu.grade or ""
     inst_str = highest_edu.institution or "Accredited University"
     level_str = highest_edu.level or "Undergraduate Degree"
@@ -62,14 +63,16 @@ def generate_dynamic_fallback(cv: CVProfile, filters: JobFilters) -> CareerPredi
     actual university degree, CGPA, target role, and technical skills when OpenAI is offline or unreachable.
     """
     has_high_cgpa, academic_note = detect_academic_standing(cv)
-    primary_edu = cv.education[0] if cv.education else None
+    edu_items = cv.get_education_items()
+    primary_edu = edu_items[0] if edu_items else None
     major = primary_edu.major if primary_edu else ""
     inst = primary_edu.institution if primary_edu else "Accredited Institution"
     grade = primary_edu.grade if primary_edu else ""
-    target_role = cv.targetRole or "Professional Specialist"
+    clean = cv.to_clean_text()
+    target_role = clean["targetRole"] or "Professional Specialist"
 
     # Extract top skills
-    skills_list = [s.strip() for s in (cv.skills or "").split(",") if s.strip()]
+    skills_list = cv.get_skills_list()
     if not skills_list:
         skills_list = ["Domain Analysis", "System Design", "Technical Communication", "Project Delivery"]
 
@@ -79,7 +82,7 @@ def generate_dynamic_fallback(cv: CVProfile, filters: JobFilters) -> CareerPredi
     location_str = f"{filters.city}, {filters.country}".strip(", ")
     curr_prefix = "BDT " if filters.country == "Bangladesh" else ("€" if filters.country == "Germany" else ("£" if filters.country == "UK" else "$"))
 
-    major_lower = (major + " " + target_role + " " + (cv.rawText or "")).lower()
+    major_lower = (major + " " + target_role + " " + clean["rawText"]).lower()
 
     # Detect Department & Discipline
     if any(k in major_lower for k in ["computer", "software", "machine learning", "data", "ai", "artificial intelligence", "cse"]):
@@ -416,18 +419,14 @@ async def analyze_profile(state: dict) -> dict:
     api_key = os.getenv("OPENAI_API_KEY")
 
     has_high_cgpa, academic_note = detect_academic_standing(cv)
-
-    edu_summary = "; ".join([
-        f"{e.level} in {e.major} from {e.institution} (Year: {e.year}, Grade: {e.grade})"
-        for e in cv.education
-    ]) if cv.education else "Education unlisted"
-
-    raw_doc_sample = (cv.rawText or "")[:2500]
+    clean = cv.to_clean_text()
+    edu_summary = clean["education"] or "Education unlisted"
+    raw_doc_sample = clean["rawText"][:2500]
 
     if not api_key:
         return {
             **state,
-            "profile_analysis": f"Candidate: {cv.fullName}. Target: {cv.targetRole}. Education: {edu_summary}. {academic_note}"
+            "profile_analysis": f"Candidate: {clean['fullName']}. Target: {clean['targetRole']}. Education: {edu_summary}. {academic_note}"
         }
 
     llm = ChatOpenAI(
@@ -441,14 +440,14 @@ async def analyze_profile(state: dict) -> dict:
     prompt = (
         "You are an elite, all-department global career trajectory analyst.\n"
         "Analyze this candidate profile across ANY academic discipline (STEM, Business, Law, Healthcare, Humanities):\n"
-        f"- Full Name: {cv.fullName}\n"
-        f"- Target Role: {cv.targetRole}\n"
+        f"- Full Name: {clean['fullName']}\n"
+        f"- Target Role: {clean['targetRole']}\n"
         f"- Academic History & CGPA: {edu_summary}\n"
-        f"- Professional Summary: {cv.summary}\n"
-        f"- Technical & Domain Skills: {cv.skills}\n"
-        f"- Work Experience: {cv.experience}\n"
-        f"- Key Projects: {cv.projects}\n"
-        f"- Certifications: {cv.certifications}\n"
+        f"- Professional Summary: {clean['summary']}\n"
+        f"- Technical & Domain Skills: {clean['skills']}\n"
+        f"- Work Experience: {clean['experience']}\n"
+        f"- Key Projects: {clean['projects']}\n"
+        f"- Certifications: {clean['certifications']}\n"
         f"- Verbatim Resume Snippet: {raw_doc_sample}\n\n"
         "Provide a concise analytical synthesis covering:\n"
         "1. Primary academic discipline & departmental classification\n"
@@ -461,7 +460,7 @@ async def analyze_profile(state: dict) -> dict:
         response = await llm.ainvoke(prompt)
         analysis_text = response.content.strip()
     except Exception:
-        analysis_text = f"Candidate: {cv.fullName}. Target Role: {cv.targetRole}. Academic Background: {edu_summary}. {academic_note}"
+        analysis_text = f"Candidate: {clean['fullName']}. Target Role: {clean['targetRole']}. Academic Background: {edu_summary}. {academic_note}"
 
     return {**state, "profile_analysis": analysis_text}
 
@@ -542,21 +541,19 @@ async def generate_career_paths(state: dict) -> CareerPredictResponse:
         "   Order all paths strictly from highest matchScore to lowest matchScore, assigning sequential rank 1, 2, 3... N."
     )
 
-    edu_summary = "; ".join([
-        f"{e.level} in {e.major} from {e.institution} ({e.year}, {e.grade})"
-        for e in cv.education
-    ]) if cv.education else "Education unlisted"
+    clean = cv.to_clean_text()
+    edu_summary = clean["education"] or "Education unlisted"
 
     user_prompt = (
-        f"Candidate Full Name: {cv.fullName}\n"
-        f"Candidate Target Role: {cv.targetRole}\n"
+        f"Candidate Full Name: {clean['fullName']}\n"
+        f"Candidate Target Role: {clean['targetRole']}\n"
         f"Target Location: {location_str} ({filters.region})\n"
         f"Target Industry: {filters.industry}\n"
         f"Academic Credentials: {edu_summary}\n"
-        f"Core Technical Skills: {cv.skills}\n"
-        f"Work Experience Summary: {cv.experience}\n"
-        f"Key Projects: {cv.projects}\n"
-        f"Raw Document Text (Verbatim): {(cv.rawText or '')[:2500]}\n\n"
+        f"Core Technical Skills: {clean['skills']}\n"
+        f"Work Experience Summary: {clean['experience']}\n"
+        f"Key Projects: {clean['projects']}\n"
+        f"Raw Document Text (Verbatim): {clean['rawText'][:2500]}\n\n"
         f"=== CANDIDATE PROFILE ANALYSIS ===\n{profile_analysis}\n\n"
         f"=== LIVE MARKET DATA (TAVILY) ===\n{market_data}\n\n"
         "Generate the ranked CareerPredictResponse with detectedDiscipline, academicEligibilityNote, candidateSummary, marketInsight, and 6 to 8 diverse paths."
