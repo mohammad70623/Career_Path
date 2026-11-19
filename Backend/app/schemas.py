@@ -250,20 +250,24 @@ class CareerPredictRequest(BaseModel):
 
 class CareerPathItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    rank: int = Field(default=1, description="Sequential rank (1 to N) strictly ordered by matchScore descending")
     title: str = Field(..., description="Recommended career trajectory or target job title")
+    trackCategory: str = Field(default="Core Domain Role", description="Career track category: 'Core Domain Role', 'Academic & Research Track', 'AI / Data & Specialization', 'Adjacent & Interdisciplinary', 'Management & Strategy'")
     matchScore: int = Field(..., description="Match percentage score between 0 and 100")
     salaryRange: str = Field(..., description="Realistic market salary range in target country/region")
     demandLevel: str = Field(..., description="Market hiring demand level, e.g. High Demand, Rapid Growth, Steady")
-    reasoning: str = Field(..., description="Explanation of why this path matches candidate competencies")
+    reasoning: str = Field(..., description="Explanation citing degree, CGPA/grades, skills, projects, or experience from CV")
     matchedSkills: List[str] = Field(default_factory=list, description="Candidate skills already aligned with this path")
     missingSkills: List[str] = Field(default_factory=list, description="Key skills recommended to achieve 100% fit")
     recommendedNextStep: str = Field(..., description="High-priority actionable recommendation for this path")
 
 class CareerPredictResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    detectedDiscipline: str = Field(default="Cross-Disciplinary & Applied Sciences", description="Primary academic and professional discipline detected from the CV")
+    academicEligibilityNote: str = Field(default="", description="Academic standing assessment based on candidate CGPA, honors, or thesis credentials")
     candidateSummary: str = Field(..., description="Holistic assessment of candidate profile and market competitiveness")
     marketInsight: str = Field(..., description="Real-time regional job market outlook based on search intelligence")
-    paths: List[CareerPathItem] = Field(default_factory=list, description="Ranked list of recommended career path trajectories")
+    paths: List[CareerPathItem] = Field(default_factory=list, description="Ranked list of 6 to 8 diverse career path trajectories sorted highest to lowest")
 
 class CVEnhanceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")

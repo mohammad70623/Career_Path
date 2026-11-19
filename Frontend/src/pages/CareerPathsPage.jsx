@@ -1,141 +1,185 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  GitBranch,
-  ArrowRight,
   Sparkles,
   TrendingUp,
-  Building2,
   CheckCircle2,
   AlertCircle,
   Briefcase,
   Layers,
-  ChevronRight,
+  ArrowRight,
   Loader2,
   RefreshCw,
   Milestone,
-  Compass
+  Compass,
+  GraduationCap,
+  Award,
+  Filter
 } from 'lucide-react';
 
 import { useCareer } from '../context/CareerContext';
 import { GlobalFilterBar } from '../components/GlobalFilterBar';
 import { predictCareerPaths } from '../services/api';
 
-const DEFAULT_PATHS = [
-  {
-    id: 'path-1',
-    title: 'AI / Machine Learning Engineer',
-    matchScore: 92,
-    salaryRange: '$2,500 – $6,000 / mo',
-    demandLevel: 'High Demand',
-    reasoning:
-      'Direct alignment with candidate PyTorch, neural modeling, and real-time inference optimization background.',
-    matchedSkills: ['Python', 'PyTorch', 'FastAPI', 'Scikit-Learn', 'Docker', 'PostgreSQL'],
-    missingSkills: ['TensorRT Inference', 'MLOps (Kubeflow)', 'Distributed Ray', 'Triton Server'],
-    recommendedNextStep: 'Deploy a containerized model inference benchmark on Kubernetes with auto-scaling.'
-  },
-  {
-    id: 'path-2',
-    title: 'Full-Stack AI Systems Architect',
-    matchScore: 87,
-    salaryRange: '$2,000 – $5,000 / mo',
-    demandLevel: 'Rapid Growth',
-    reasoning:
-      'Bridges modern frontend engineering with resilient AI-powered backend microservices and streaming REST/gRPC endpoints.',
-    matchedSkills: ['React', 'Python', 'FastAPI', 'PostgreSQL', 'Docker'],
-    missingSkills: ['Next.js 15 (App Router)', 'GraphQL', 'Redis Caching', 'CI/CD Automation'],
-    recommendedNextStep: 'Build an end-to-end full-stack AI dashboard with live streaming generation.'
-  },
-  {
-    id: 'path-3',
-    title: 'Data & Decision Systems Engineer',
-    matchScore: 81,
-    salaryRange: '$1,800 – $4,200 / mo',
-    demandLevel: 'Steady Demand',
-    reasoning:
-      'Leverages data pipeline, feature engineering, and statistical anomaly detection strengths for corporate intelligence.',
-    matchedSkills: ['Python', 'PostgreSQL', 'Scikit-Learn'],
-    missingSkills: ['Snowflake / BigQuery', 'dbt (Data Build Tool)', 'Apache Spark', 'Advanced SQL Windowing'],
-    recommendedNextStep: 'Architect an automated data drift monitoring and transformation pipeline.'
-  },
-  {
-    id: 'path-4',
-    title: 'AI Solutions Lead & Technical Product Manager',
-    matchScore: 75,
-    salaryRange: '$3,000 – $7,000 / mo',
-    demandLevel: 'Strategic Emerging',
-    reasoning:
-      'High-level trajectory translating technical AI capabilities into commercial business ROI and product specifications.',
-    matchedSkills: ['System Design', 'Technical Communication', 'API Architecture'],
-    missingSkills: ['Product Roadmapping', 'A/B Experimentation', 'Executive Stakeholder Management'],
-    recommendedNextStep: 'Define a complete AI product specification with quantifiable user metrics and engineering sprint goals.'
-  }
+const TRACK_FILTER_OPTIONS = [
+  { id: 'all', label: 'All Tracks' },
+  { id: 'core', label: 'Core Domain' },
+  { id: 'academic', label: 'Academic & Research' },
+  { id: 'specialization', label: 'Specialization' },
+  { id: 'adjacent', label: 'Adjacent & Leadership' }
 ];
 
 export const CareerPathsPage = () => {
   const navigate = useNavigate();
-  const { cvData, jobFilters } = useCareer();
+  const {
+    cvData,
+    jobFilters,
+    careerTrajectories,
+    setCareerTrajectories
+  } = useCareer();
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [candidateSummary, setCandidateSummary] = useState(
-    `Candidate profile indicates strong technical velocity in Applied AI and Machine Learning systems with a B.Sc. in Computer Science.`
-  );
-  const [marketInsight, setMarketInsight] = useState(
-    `Robust hiring demand in ${jobFilters.city}, ${jobFilters.country} for specialized software and AI engineering roles.`
-  );
-  const [careerPaths, setCareerPaths] = useState(DEFAULT_PATHS);
+  const [selectedTrack, setSelectedTrack] = useState('all');
 
-  // Trigger live LangGraph + Tavily career prediction
+  // Trigger live all-department career prediction
   const handleGeneratePaths = async () => {
     setIsGenerating(true);
-    toast.loading('Synthesizing LangGraph trajectory & Tavily live market data...', { id: 'career-pred' });
+    const toastId = toast.loading('Synthesizing universal all-department trajectory & Tavily live market data...', { id: 'career-pred' });
 
     try {
       const response = await predictCareerPaths(cvData, jobFilters);
 
       if (response && response.paths && response.paths.length > 0) {
-        setCandidateSummary(response.candidateSummary || candidateSummary);
-        setMarketInsight(response.marketInsight || marketInsight);
-        setCareerPaths(
-          response.paths.map((p, idx) => ({
-            id: `api-path-${idx + 1}`,
-            title: p.title,
-            matchScore: p.matchScore || 85,
-            salaryRange: p.salaryRange || '$2,500 – $5,500 / mo',
-            demandLevel: p.demandLevel || 'High Demand',
-            reasoning: p.reasoning || 'Strong fit with current competencies.',
-            matchedSkills: p.matchedSkills || ['Python', 'PyTorch'],
-            missingSkills: p.missingSkills || ['MLOps', 'Distributed Systems'],
-            recommendedNextStep: p.recommendedNextStep || 'Complete hands-on deployment project.'
-          }))
-        );
+        // Enforce strict highest-to-lowest sorting by matchScore
+        const sortedPaths = [...response.paths].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+        sortedPaths.forEach((p, idx) => {
+          p.rank = idx + 1;
+          p.id = p.id || `path-${idx + 1}`;
+        });
 
-        toast.success('Live AI career trajectories generated via LangGraph!', { id: 'career-pred', icon: '✨' });
+        const updatedResult = {
+          ...response,
+          paths: sortedPaths
+        };
+
+        setCareerTrajectories(updatedResult);
+        toast.success(`Generated ${sortedPaths.length} ranked trajectories across ${response.detectedDiscipline || 'your discipline'}!`, {
+          id: toastId,
+          icon: '✨'
+        });
       } else {
-        throw new Error('Empty recommendation array returned');
+        throw new Error('Empty trajectory array returned');
       }
     } catch (error) {
-      console.warn('[CareerPaths] Live API prediction encountered notice:', error.message);
-      toast.dismiss('career-pred');
-      toast.success(`Active on ${jobFilters.city}, ${jobFilters.country} trajectory mode.`, {
-        icon: '📍',
-        duration: 3500
-      });
-
-      // Update tailored localized defaults
-      setMarketInsight(`Active hiring demand observed in ${jobFilters.city}, ${jobFilters.country} (${jobFilters.region}) for ${jobFilters.industry}.`);
+      console.warn('[CareerPaths] Prediction notice:', error.message);
+      toast.dismiss(toastId);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleSeeLiveJobs = (roleTitle) => {
-    navigate('/jobs');
-  };
+  // Automatically generate on initial mount if trajectories have not been loaded yet
+  useEffect(() => {
+    if (!careerTrajectories || !careerTrajectories.paths || careerTrajectories.paths.length === 0) {
+      handleGeneratePaths();
+    }
+  }, []);
 
-  const handleViewSkillGap = (roleTitle) => {
-    navigate('/skill-gap');
+  const paths = careerTrajectories?.paths || [];
+  const detectedDiscipline = careerTrajectories?.detectedDiscipline || 'Universal Cross-Disciplinary Systems';
+  const academicEligibilityNote = careerTrajectories?.academicEligibilityNote || '';
+  const candidateSummary = careerTrajectories?.candidateSummary || `Candidate profile indicates strong technical velocity in ${cvData.targetRole || 'Professional Practice'} with verified academic credentials.`;
+  const marketInsight = careerTrajectories?.marketInsight || `Active hiring demand observed in ${jobFilters.city}, ${jobFilters.country} (${jobFilters.region}) for ${jobFilters.industry} specialists.`;
+
+  // Compute category counts for filter pills
+  const trackCounts = useMemo(() => {
+    const counts = {
+      all: paths.length,
+      core: 0,
+      academic: 0,
+      specialization: 0,
+      adjacent: 0
+    };
+
+    paths.forEach((p) => {
+      const cat = (p.trackCategory || '').toLowerCase();
+      const title = (p.title || '').toLowerCase();
+
+      if (cat.includes('core')) counts.core += 1;
+      if (cat.includes('academic') || cat.includes('research') || title.includes('lecturer') || title.includes('faculty')) counts.academic += 1;
+      if (cat.includes('specialization') || cat.includes('technical') || cat.includes('data')) counts.specialization += 1;
+      if (cat.includes('adjacent') || cat.includes('management') || cat.includes('strategy') || cat.includes('leadership') || cat.includes('interdisciplinary')) counts.adjacent += 1;
+    });
+
+    return counts;
+  }, [paths]);
+
+  // Filter paths while strictly preserving the highest-to-lowest matchScore rank
+  const filteredPaths = useMemo(() => {
+    if (selectedTrack === 'all') return paths;
+
+    return paths.filter((p) => {
+      const cat = (p.trackCategory || '').toLowerCase();
+      const title = (p.title || '').toLowerCase();
+
+      if (selectedTrack === 'core') {
+        return cat.includes('core');
+      }
+      if (selectedTrack === 'academic') {
+        return cat.includes('academic') || cat.includes('research') || title.includes('lecturer') || title.includes('faculty');
+      }
+      if (selectedTrack === 'specialization') {
+        return cat.includes('specialization') || cat.includes('technical') || cat.includes('data');
+      }
+      if (selectedTrack === 'adjacent') {
+        return cat.includes('adjacent') || cat.includes('management') || cat.includes('strategy') || cat.includes('leadership') || cat.includes('interdisciplinary');
+      }
+      return true;
+    });
+  }, [paths, selectedTrack]);
+
+  // Color-coded badge for Track Category
+  const renderTrackBadge = (trackCategory = '') => {
+    const lower = trackCategory.toLowerCase();
+    if (lower.includes('academic') || lower.includes('research')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <GraduationCap className="w-3.5 h-3.5" />
+          <span>{trackCategory}</span>
+        </span>
+      );
+    }
+    if (lower.includes('core')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>{trackCategory}</span>
+        </span>
+      );
+    }
+    if (lower.includes('specialization') || lower.includes('data')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{trackCategory}</span>
+        </span>
+      );
+    }
+    if (lower.includes('management') || lower.includes('strategy')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-300">
+          <Award className="w-3.5 h-3.5" />
+          <span>{trackCategory}</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+        <Layers className="w-3.5 h-3.5" />
+        <span>{trackCategory}</span>
+      </span>
+    );
   };
 
   return (
@@ -145,7 +189,7 @@ export const CareerPathsPage = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="badge badge-sm font-semibold tracking-wider uppercase bg-primary text-primary-content">
-              Feature 02 // Trajectory Engine
+              Feature 02 // Universal Trajectory Engine
             </span>
             <span className="text-xs text-base-content/50 font-mono">
               /career-paths
@@ -155,10 +199,7 @@ export const CareerPathsPage = () => {
             Algorithmic Career Path Recommendations
           </h1>
           <p className="text-sm text-base-content/65 mt-0.5">
-            Powered by LangGraph multi-agent synthesis & Tavily real-time job market intelligence in{' '}
-            <strong className="text-base-content">
-              {jobFilters.city}, {jobFilters.country}
-            </strong>.
+            100% dynamic, all-department trajectory discovery strictly ranked by match score from your verified CV credentials.
           </p>
         </div>
 
@@ -171,11 +212,11 @@ export const CareerPathsPage = () => {
             {isGenerating ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Running LangGraph...</span>
+                <span>Synthesizing Trajectories...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5 text-accent" />
+                <Sparkles className="w-3.5 h-3.5 text-secondary" />
                 <span>Generate AI Career Paths</span>
               </>
             )}
@@ -184,7 +225,7 @@ export const CareerPathsPage = () => {
       </div>
 
       {/* Global Filter Bar (10-Point Parameter Ribbon) */}
-      <GlobalFilterBar />
+      <GlobalFilterBar onFilterChange={handleGeneratePaths} />
 
       {/* Executive Summary & Live Market Insight Banner */}
       <div className="card bg-base-100 border border-base-300 rounded-2xl p-6 shadow-sm space-y-4">
@@ -193,16 +234,21 @@ export const CareerPathsPage = () => {
             <div className="w-10 h-10 rounded-xl bg-primary text-primary-content flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
               <Compass className="w-5 h-5 text-accent" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-primary">
                   AI Candidate Profile Synthesis
                 </h3>
-                <span className="badge badge-xs bg-primary/10 text-primary font-semibold">
-                  {cvData.targetRole || 'Software Engineer'}
+                {/* Detected Academic/Professional Discipline Badge */}
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-content shadow-2xs">
+                  <GraduationCap className="w-3.5 h-3.5 text-accent" />
+                  <span>Discipline: {detectedDiscipline}</span>
+                </span>
+                <span className="badge badge-xs bg-base-200 text-base-content/70 font-mono font-medium">
+                  {cvData.targetRole || 'Candidate'}
                 </span>
               </div>
-              <p className="text-xs text-base-content/75 leading-relaxed max-w-3xl">
+              <p className="text-xs text-base-content/80 leading-relaxed max-w-4xl">
                 {candidateSummary}
               </p>
             </div>
@@ -211,10 +257,21 @@ export const CareerPathsPage = () => {
           <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
-              <span>Tavily Market Feed Active</span>
+              <span>Tavily Market Intelligence Active</span>
             </span>
           </div>
         </div>
+
+        {/* Academic Standing & CGPA Assessment Callout */}
+        {academicEligibilityNote && (
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/90 text-xs text-emerald-950">
+            <GraduationCap className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-emerald-900">Academic Standing & CGPA Assessment: </span>
+              <span className="text-emerald-800 leading-relaxed">{academicEligibilityNote}</span>
+            </div>
+          </div>
+        )}
 
         {/* Live Market Insights Tagline */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-base-200/60 p-3.5 rounded-xl border border-base-300/70">
@@ -237,135 +294,208 @@ export const CareerPathsPage = () => {
         </div>
       </div>
 
-      {/* 4 Ranked Career Path Cards Grid */}
-      <div className="grid grid-cols-1 gap-6">
-        {careerPaths.map((path, index) => (
-          <div
-            key={path.id || index}
-            className="card bg-base-100 border border-base-300 rounded-2xl p-6 shadow-sm hover:border-base-content/30 transition-all duration-200"
-          >
-            {/* Card Header: Title, Rank, Match Badge & Salary */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-base-300/80">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-accent/10 text-accent border border-accent/20">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{path.matchScore}% Match</span>
-                  </span>
-                  <span className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
-                    {index === 0
-                      ? 'Rank 1 • Direct Fit'
-                      : index === 1
-                      ? 'Rank 2 • Specialized Trajectory'
-                      : index === 2
-                      ? 'Rank 3 • High-Growth Adjacent'
-                      : 'Rank 4 • Strategic Leadership'}
-                  </span>
-                </div>
-                <h2 className="text-xl font-bold text-primary tracking-tight">
-                  {path.title}
-                </h2>
-              </div>
+      {/* Track Filter Pill Bar (All Tracks, Core Domain, Academic & Research, Specialization, Adjacent & Leadership) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-base-content/50" />
+          <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+            Filter Trajectory Tracks:
+          </span>
+        </div>
 
-              {/* Compensation & Demand Badges */}
-              <div className="flex flex-row sm:flex-col items-start sm:items-end justify-between sm:justify-center gap-1">
-                <span className="text-sm font-bold text-primary">
-                  {path.salaryRange}
-                </span>
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  {path.demandLevel}
-                </span>
-              </div>
-            </div>
+        <div className="flex flex-wrap items-center gap-1.5 bg-base-100 p-1.5 rounded-xl border border-base-300 shadow-2xs">
+          {TRACK_FILTER_OPTIONS.map((opt) => {
+            const count = trackCounts[opt.id] ?? 0;
+            const isActive = selectedTrack === opt.id;
 
-            {/* Reasoning & Market Context */}
-            <div className="py-4 space-y-2.5">
-              <p className="text-xs font-bold text-base-content/50 uppercase tracking-wider">
-                Trajectory Analysis & Reasoning
-              </p>
-              <p className="text-sm text-base-content/80 leading-relaxed max-w-4xl">
-                {path.reasoning}
-              </p>
-            </div>
-
-            {/* Matched vs Missing Skills Grid */}
-            <div className="pt-4 border-t border-base-300/80 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Matched Skills */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wider">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
-                  <span>Verified Competencies (Matched from CV)</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(path.matchedSkills || []).map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-accent/5 text-accent font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-md border border-accent/20"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Missing Skills */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-base-content/80 uppercase tracking-wider">
-                  <AlertCircle className="w-3.5 h-3.5 text-warning" />
-                  <span>Recommended Skills for 100% Fit</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(path.missingSkills || []).map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-base-200 text-base-content/80 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded-md border border-base-300"
-                    >
-                      +{skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Recommended Next Step Callout */}
-            {path.recommendedNextStep && (
-              <div className="mt-4 p-3 rounded-xl bg-base-200/50 border border-base-300/70 flex items-start gap-2.5 text-xs">
-                <Milestone className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-primary">Recommended Action: </span>
-                  <span className="text-base-content/75">{path.recommendedNextStep}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Bottom Actions */}
-            <div className="mt-5 pt-4 border-t border-base-300/60 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-base-content/60">
-                Targeting: <strong className="text-base-content">{jobFilters.city}, {jobFilters.country}</strong> • Industry:{' '}
-                <strong className="text-base-content">{jobFilters.industry}</strong>
-              </span>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleViewSkillGap(path.title)}
-                  className="btn btn-sm btn-ghost text-base-content/75 hover:text-base-content hover:bg-base-200"
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setSelectedTrack(opt.id)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-primary text-primary-content shadow-xs'
+                    : 'text-base-content/70 hover:text-base-content hover:bg-base-200'
+                }`}
+              >
+                <span>{opt.label}</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    isActive ? 'bg-primary-content/20 text-primary-content' : 'bg-base-200 text-base-content/60'
+                  }`}
                 >
-                  View Skill Gap
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSeeLiveJobs(path.title)}
-                  className="btn btn-sm btn-primary rounded-xl gap-1.5 font-semibold shadow-xs"
-                >
-                  <Briefcase className="w-3.5 h-3.5" />
-                  <span>See Live Jobs</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Loading Skeleton */}
+      {isGenerating && paths.length === 0 && (
+        <div className="card bg-base-100 border border-base-300 rounded-2xl p-12 text-center shadow-sm space-y-4">
+          <Loader2 className="w-10 h-10 animate-spin text-accent mx-auto" />
+          <div>
+            <h3 className="text-base font-bold text-primary">Synthesizing All-Department Trajectories...</h3>
+            <p className="text-xs text-base-content/60 mt-1 max-w-md mx-auto">
+              Evaluating your degree, CGPA, academic distinctions, verified skills, and Tavily market demand in{' '}
+              <strong>{jobFilters.city}, {jobFilters.country}</strong>.
+            </p>
           </div>
-        ))}
+        </div>
+      )}
+
+      {/* Ranked Career Path Cards Grid (Strict Highest-to-Lowest Order Top-to-Bottom) */}
+      <div className="grid grid-cols-1 gap-6">
+        {filteredPaths.length === 0 && !isGenerating ? (
+          <div className="card bg-base-100 border border-base-300 rounded-2xl p-8 text-center shadow-sm space-y-3">
+            <Compass className="w-8 h-8 text-base-content/40 mx-auto" />
+            <h3 className="text-sm font-bold text-primary">No trajectories match the selected track filter</h3>
+            <p className="text-xs text-base-content/60">
+              Switch back to "All Tracks" to review all {paths.length} recommended career roles.
+            </p>
+            <button
+              type="button"
+              onClick={() => setSelectedTrack('all')}
+              className="btn btn-xs btn-outline border-base-300 text-primary mx-auto"
+            >
+              Reset to All Tracks
+            </button>
+          </div>
+        ) : (
+          filteredPaths.map((path) => (
+            <div
+              key={path.id || path.rank}
+              className="card bg-base-100 border border-base-300 rounded-2xl p-6 shadow-sm hover:border-base-content/30 transition-all duration-200 space-y-4"
+            >
+              {/* Card Header: Rank, Title, Track Tag, Match Badge & Salary */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-base-300/80">
+                <div className="flex items-start gap-3.5">
+                  {/* Sequential Rank Badge #1, #2, #3... */}
+                  <div className="w-8 h-8 rounded-xl bg-primary text-primary-content flex items-center justify-center font-bold text-xs font-mono shrink-0 shadow-xs mt-0.5">
+                    #{path.rank || 1}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Match Score Badge */}
+                      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-accent/10 text-accent border border-accent/20">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{path.matchScore}% Match</span>
+                      </span>
+
+                      {/* Track Category Pill */}
+                      {renderTrackBadge(path.trackCategory)}
+                    </div>
+
+                    <h2 className="text-xl font-bold text-primary tracking-tight">
+                      {path.title}
+                    </h2>
+                  </div>
+                </div>
+
+                {/* Compensation & Demand Badges */}
+                <div className="flex flex-row sm:flex-col items-start sm:items-end justify-between sm:justify-center gap-1 shrink-0 self-start sm:self-auto">
+                  <span className="text-sm font-bold text-primary font-mono">
+                    {path.salaryRange}
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    {path.demandLevel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reasoning & Academic/Domain Evidence */}
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-bold text-base-content/50 uppercase tracking-wider">
+                  Trajectory Analysis & Candidate Evidence
+                </p>
+                <p className="text-xs text-base-content/85 leading-relaxed">
+                  {path.reasoning}
+                </p>
+              </div>
+
+              {/* Matched vs Missing Skills Grid */}
+              <div className="pt-3 border-t border-base-300/80 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Matched Skills */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wider">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                    <span>Verified Competencies (Matched from CV)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(path.matchedSkills || []).map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-accent/5 text-accent font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-md border border-accent/20"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Missing Skills */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-base-content/80 uppercase tracking-wider">
+                    <AlertCircle className="w-3.5 h-3.5 text-warning" />
+                    <span>Recommended Skills for 100% Fit</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(path.missingSkills || []).map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-base-200 text-base-content/80 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded-md border border-base-300"
+                      >
+                        +{skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommended Next Step Callout */}
+              {path.recommendedNextStep && (
+                <div className="p-3 rounded-xl bg-base-200/50 border border-base-300/70 flex items-start gap-2.5 text-xs">
+                  <Milestone className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-primary">Recommended Action: </span>
+                    <span className="text-base-content/75">{path.recommendedNextStep}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Actions */}
+              <div className="pt-3 border-t border-base-300/60 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-base-content/60">
+                  Targeting: <strong className="text-base-content">{jobFilters.city}, {jobFilters.country}</strong> • Industry:{' '}
+                  <strong className="text-base-content">{jobFilters.industry}</strong>
+                </span>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/skill-gap')}
+                    className="btn btn-sm btn-ghost text-base-content/75 hover:text-base-content hover:bg-base-200"
+                  >
+                    View Skill Gap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/jobs')}
+                    className="btn btn-sm btn-primary rounded-xl gap-1.5 font-semibold shadow-xs"
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>See Live Jobs</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -230,6 +230,7 @@ export const CareerProvider = ({ children }) => {
   // Shared app states
   const [cvData, setCvData] = useState(initialCvData);
   const [uploadedFile, setUploadedFile] = useState(null); // { name: string, type: string, url: string, rawText: string } | null
+  const [careerTrajectories, setCareerTrajectories] = useState(null);
   const [jobFilters, setJobFilters] = useState(initialJobFilters);
   const [selectedJob, setSelectedJob] = useState(null);
   const [roadmapSteps, setRoadmapSteps] = useState([]);
@@ -305,6 +306,7 @@ export const CareerProvider = ({ children }) => {
     setCvData(initialCvData);
     setUploadedFile(null);
     setCvAnalysis(null);
+    setCareerTrajectories(null);
   };
 
   // Helper method to update job filters with intelligent geographic cascading
@@ -367,6 +369,10 @@ export const CareerProvider = ({ children }) => {
     // Uploaded Original Document State
     uploadedFile,
     setUploadedFile,
+
+    // Dynamic Career Trajectories
+    careerTrajectories,
+    setCareerTrajectories,
 
     // Dynamic Multi-Entry Experience & Project Formatters
     formatExperienceToString,
