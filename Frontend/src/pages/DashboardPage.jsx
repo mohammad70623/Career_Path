@@ -326,109 +326,156 @@ export const DashboardPage = () => {
       </div>
 
       {/* 2. 4 KPI SUMMARY CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {/* KPI 1: CV Strength Score */}
-        <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              CV Strength Score
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary">
-              <FileText className="w-4 h-4 text-primary" />
+        <div className="flex flex-col justify-between h-full p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs hover:border-base-content/30 transition-all">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                CV Strength Score
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary shrink-0">
+                <FileText className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mt-3">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold tracking-tight text-primary">
+                  {cvAnalysis?.cvQualityScore || atsScore}
+                </span>
+                <span className="text-sm font-medium text-slate-500">/ 100</span>
+              </div>
+              <span className="badge badge-sm bg-accent/10 text-accent font-semibold px-2 py-0.5 border border-accent/20 shrink-0">
+                {(cvAnalysis?.cvQualityScore || atsScore) >= 90
+                  ? 'Executive Grade'
+                  : (cvAnalysis?.cvQualityScore || atsScore) >= 80
+                  ? 'Strong Profile'
+                  : 'Needs Optimization'}
+              </span>
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-primary">
-              {cvAnalysis?.cvQualityScore || atsScore}
-            </span>
-            <span className="text-xs font-semibold text-base-content/50">/ 100</span>
-            <span className="badge badge-xs bg-accent/10 text-accent font-semibold ml-auto">
-              {(cvAnalysis?.cvQualityScore || atsScore) >= 90
-                ? 'Executive Grade'
-                : (cvAnalysis?.cvQualityScore || atsScore) >= 80
-                ? 'Strong Profile'
-                : 'Needs Optimization'}
-            </span>
+
+          <div className="pt-3 mt-3 border-t border-gray-100">
+            <p
+              className="text-xs text-base-content/65 leading-relaxed line-clamp-2"
+              title={`${cvAnalysis?.sector ? `${cvAnalysis.sector} • ` : ''}Ready for applicant tracking systems & recruiter review`}
+            >
+              {cvAnalysis?.sector ? `${cvAnalysis.sector} • ` : ''}Ready for applicant tracking systems & recruiter review
+            </p>
           </div>
-          <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            {cvAnalysis?.sector ? `${cvAnalysis.sector} • ` : ''}Ready for applicant tracking systems & recruiter review
-          </p>
         </div>
 
         {/* KPI 2: Verified Jobs Available */}
-        <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              Verified Jobs Available
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary">
-              <Briefcase className="w-4 h-4 text-primary" />
+        <div className="flex flex-col justify-between h-full p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs hover:border-base-content/30 transition-all">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                Verified Jobs Available
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary shrink-0">
+                <Briefcase className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mt-3">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold tracking-tight text-primary">
+                  142
+                </span>
+                <span className="text-sm font-medium text-slate-500">Openings</span>
+              </div>
+              <span className="badge badge-sm bg-primary/10 text-primary font-semibold px-2 py-0.5 border border-primary/20 shrink-0">
+                Active Now
+              </span>
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-primary">
-              142
-            </span>
-            <span className="text-xs font-semibold text-base-content/50">Openings</span>
-            <span className="badge badge-xs bg-primary/10 text-primary font-semibold ml-auto">
-              Active Now
-            </span>
+
+          <div className="pt-3 mt-3 border-t border-gray-100">
+            <p
+              className="text-xs text-base-content/65 leading-relaxed line-clamp-2"
+              title={`Hiring right now in ${jobFilters.city}, ${jobFilters.country}`}
+            >
+              Hiring right now in {jobFilters.city}, {jobFilters.country}
+            </p>
           </div>
-          <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            Hiring right now in {jobFilters.city}, {jobFilters.country}
-          </p>
         </div>
 
         {/* KPI 3: Fake Jobs Blocked */}
-        <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              Fake Jobs Blocked
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
-              <ShieldCheck className="w-4 h-4" />
+        <div className="flex flex-col justify-between h-full p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs hover:border-base-content/30 transition-all">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                Fake Jobs Blocked
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mt-3">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold tracking-tight text-emerald-600">
+                  3
+                </span>
+                <span className="text-sm font-medium text-slate-500">Scams</span>
+              </div>
+              <span className="badge badge-sm bg-accent/15 text-accent font-semibold px-2 py-0.5 border border-accent/20 shrink-0">
+                14 Checked
+              </span>
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-accent">
-              3 Scams
-            </span>
-            <span className="text-xs font-semibold text-base-content/60">Filtered</span>
-            <span className="badge badge-xs bg-accent/15 text-accent font-semibold ml-auto">
-              14 Checked
-            </span>
+
+          <div className="pt-3 mt-3 border-t border-gray-100">
+            <p
+              className="text-xs text-base-content/65 leading-relaxed line-clamp-2"
+              title="Suspicious listings detected & safely prevented"
+            >
+              Suspicious listings detected & safely prevented
+            </p>
           </div>
-          <p className="text-[11px] text-base-content/60 mt-2 truncate">
-            Suspicious listings detected & safely prevented
-          </p>
         </div>
 
         {/* KPI 4: Career Goals Completed */}
-        <div className="card bg-base-100 border border-base-300 rounded-2xl p-5 shadow-2xs hover:border-base-content/30 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
-              Career Goals Completed
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary">
-              <Milestone className="w-4 h-4 text-primary" />
+        <div className="flex flex-col justify-between h-full p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs hover:border-base-content/30 transition-all">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                Career Goals Completed
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary shrink-0">
+                <Milestone className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mt-3">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold tracking-tight text-primary">
+                  {roadmapProgressPct}%
+                </span>
+                <span className="text-sm font-medium text-slate-500">
+                  ({completedRoadmapSteps}/{totalRoadmapSteps})
+                </span>
+              </div>
+              <span className="badge badge-sm bg-secondary/15 text-secondary font-semibold px-2 py-0.5 border border-secondary/20 shrink-0">
+                On Track
+              </span>
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-primary">
-              {roadmapProgressPct}%
-            </span>
-            <span className="text-xs font-semibold text-base-content/60">
-              ({completedRoadmapSteps}/{totalRoadmapSteps})
-            </span>
-            <span className="badge badge-xs bg-secondary/15 text-secondary font-semibold ml-auto">
-              On Track
-            </span>
-          </div>
-          <div className="w-full bg-base-200 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div
-              className="bg-primary h-full rounded-full transition-all duration-300"
-              style={{ width: `${roadmapProgressPct}%` }}
-            ></div>
+
+          <div className="pt-3 mt-3 border-t border-gray-100 space-y-1.5">
+            <div className="w-full bg-base-200 h-1.5 rounded-full overflow-hidden">
+              <div
+                className="bg-primary h-full rounded-full transition-all duration-300"
+                style={{ width: `${roadmapProgressPct}%` }}
+              ></div>
+            </div>
+            <p
+              className="text-xs text-base-content/65 leading-relaxed line-clamp-1"
+              title="Milestones achieved toward targeted seniority"
+            >
+              Milestones achieved toward target role
+            </p>
           </div>
         </div>
       </div>
@@ -449,13 +496,13 @@ export const DashboardPage = () => {
               </div>
 
               {/* Chart Legend Badges */}
-              <div className="flex items-center gap-3 text-xs font-semibold">
-                <span className="flex items-center gap-1.5 text-primary">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span>
+              <div className="flex items-center gap-3 text-xs font-semibold shrink-0 mt-1 sm:mt-0">
+                <span className="flex items-center gap-1.5 text-primary whitespace-nowrap">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary inline-block shrink-0"></span>
                   Verified Jobs
                 </span>
-                <span className="flex items-center gap-1.5 text-accent">
-                  <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block"></span>
+                <span className="flex items-center gap-1.5 text-accent whitespace-nowrap">
+                  <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block shrink-0"></span>
                   Scams Blocked
                 </span>
               </div>
@@ -585,7 +632,7 @@ export const DashboardPage = () => {
               </div>
               <div className="flex items-center justify-between py-1">
                 <span className="text-base-content/60">Work Authorization</span>
-                <span className="font-bold text-primary truncate max-w-[180px]">
+                <span className="font-bold text-primary text-right" title={jobFilters.workAuth}>
                   {jobFilters.workAuth}
                 </span>
               </div>
@@ -646,39 +693,39 @@ export const DashboardPage = () => {
                 const isSafe = job.status === 'safe';
                 return (
                   <tr key={job.id} className="border-b border-base-200 hover:bg-base-200/40 transition-colors">
-                    <td className="font-bold text-primary max-w-[260px]">
-                      <div className="truncate" title={job.title}>
+                    <td className="font-bold text-primary min-w-[220px] max-w-[340px]">
+                      <div className="leading-snug" title={job.title}>
                         {job.title}
                       </div>
-                      <div className="text-[11px] text-base-content/50 font-normal truncate mt-0.5" title={job.notes}>
+                      <div className="text-[11px] text-base-content/55 font-normal leading-relaxed mt-1" title={job.notes}>
                         {job.notes}
                       </div>
                     </td>
-                    <td className="font-semibold text-base-content/85">
+                    <td className="font-semibold text-base-content/85 min-w-[130px]" title={job.company}>
                       {job.company}
                     </td>
-                    <td className="text-base-content/65 whitespace-nowrap">
+                    <td className="text-base-content/65 whitespace-nowrap" title={job.location}>
                       {job.location}
                     </td>
                     <td>
-                      <span className="font-semibold text-primary font-mono bg-base-200 px-2 py-0.5 rounded">
+                      <span className="font-semibold text-primary font-mono bg-base-200 px-2 py-0.5 rounded whitespace-nowrap">
                         {job.matchScore}
                       </span>
                     </td>
                     <td>
                       {isSafe ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Verified Safe</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
-                          <AlertTriangle className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                          <AlertTriangle className="w-3 h-3 text-amber-600" />
                           <span>Suspicious / High Risk</span>
                         </span>
                       )}
                     </td>
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap">
                       <button
                         onClick={() => navigate('/jobs')}
                         className="btn btn-xs btn-outline border-base-300 text-primary hover:bg-primary hover:text-primary-content font-medium rounded-lg"
