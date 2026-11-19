@@ -14,7 +14,12 @@ from app.schemas import (
     WeightedCriterion,
     CoreModuleAuditItem,
     JDMatchResult,
-    CVProfile
+    CVProfile,
+    RedFlagItem,
+    CriterionBreakdownItem,
+    ModuleAuditItem,
+    GapAnalysisItem,
+    ActionableSolutionItem
 )
 
 # 14 Universal Industry Sectors & their key competency taxonomies
@@ -108,12 +113,13 @@ def run_deterministic_validation(cv: CVProfile) -> Dict[str, Any]:
     summary_len = len(cv.summary.strip()) if cv.summary else 0
     skills_list = [s.strip() for s in (cv.skills or "").split(",") if s.strip()]
 
-    exp_text = cv.experience or ""
-    proj_text = cv.projects or ""
+    exp_text = cv.experience if isinstance(cv.experience, str) else ""
+    proj_text = cv.projects if isinstance(cv.projects, str) else ""
+    raw_text = cv.rawText or ""
 
     # Metric detection (numbers, %, $, sub-Xms, etc.)
     metric_pattern = re.compile(r'(\d+[%kKmM]?|\$\d+|\d+\+?|sub-\d+ms|\b\d{2,}\b)')
-    exp_metrics = metric_pattern.findall(exp_text)
+    exp_metrics = metric_pattern.findall(f"{exp_text} {raw_text}")
     proj_metrics = metric_pattern.findall(proj_text)
 
     education_count = len(cv.education) if cv.education else 0
@@ -124,7 +130,7 @@ def run_deterministic_validation(cv: CVProfile) -> Dict[str, Any]:
 
     action_verbs = re.findall(
         r'\b(Architected|Engineered|Spearheaded|Implemented|Deployed|Designed|Optimized|Built|Developed|Managed|Led|Accelerated|Reduced|Generated|Delivered)\b',
-        exp_text,
+        f"{exp_text} {raw_text}",
         re.IGNORECASE
     )
 
@@ -156,7 +162,7 @@ def build_deterministic_fallback(req: CVAnalyzeRequest, val: Dict[str, Any]) -> 
     sec_info = SECTOR_TAXONOMY[sector]
     cv = req.cv
 
-    cv_text = f"{cv.summary} {cv.skills} {cv.experience} {cv.projects}".lower()
+    cv_text = f"{cv.summary} {cv.skills} {cv.experience} {cv.projects} {cv.rawText or ''}".lower()
     matched = [s for s in sec_info["critical_skills"] if s.lower() in cv_text]
     missing = [s for s in sec_info["critical_skills"] if s.lower() not in cv_text]
 
@@ -376,48 +382,48 @@ def _enrich_compatibility_fields(res: CVAnalyzeResponse, mode: str, sector: str)
     res.eligibilityTier = res.jdMatchResult.eligibilityStatus if res.jdMatchResult else None
 
     res.criteriaBreakdown = [
-        {
-            "id": f"criterion-{idx + 1}",
-            "name": w.name,
-            "weight": w.maxScore,
-            "score": w.score,
-            "confidence": w.confidence,
-            "status": "Optimal" if (w.score / w.maxScore) >= 0.85 else "Needs Optimization",
-            "evidence": w.evidence
-        }
+        CriterionBreakdownItem(
+            id=f"criterion-{idx + 1}",
+            name=w.name,
+            weight=w.maxScore,
+            score=w.score,
+            confidence=w.confidence,
+            status="Optimal" if (w.score / w.maxScore) >= 0.85 else "Needs Optimization",
+            evidence=w.evidence
+        )
         for idx, w in enumerate(res.weightedBreakdown)
     ]
 
     res.modulesAudit = [
-        {
-            "id": f"mod-{m.id}",
-            "name": m.moduleName,
-            "status": m.status,
-            "score": m.score,
-            "confidence": m.confidence,
-            "evidence": m.summary or (" ".join(m.evidenceQuotes) if m.evidenceQuotes else "")
-        }
+        ModuleAuditItem(
+            id=f"mod-{m.id}",
+            name=m.moduleName,
+            status=m.status,
+            score=m.score,
+            confidence=m.confidence,
+            evidence=m.summary or (" ".join(m.evidenceQuotes) if m.evidenceQuotes else "")
+        )
         for m in res.coreModulesAudit
     ]
 
-    res.gapAnalysis = {
-        "matchedSkills": res.matchedSkills,
-        "missingSkills": res.missingSkills,
-        "experienceGap": res.jdMatchResult.experienceGap if res.jdMatchResult else f"Candidate presents 3+ years of solid execution in {sector}.",
-        "qualificationEligibility": res.jdMatchResult.qualificationMatch if res.jdMatchResult else "Accredited educational degrees verified."
-    }
+    res.gapAnalysis = GapAnalysisItem(
+        matchedSkills=res.matchedSkills,
+        missingSkills=res.missingSkills,
+        experienceGap=res.jdMatchResult.experienceGap if res.jdMatchResult else f"Candidate presents 3+ years of solid execution in {sector}.",
+        qualificationEligibility=res.jdMatchResult.qualificationMatch if res.jdMatchResult else "Accredited educational degrees verified."
+    )
 
     res.actionableSolutions = [
-        {
-            "id": f"sol-{m.id}",
-            "section": m.targetField,
-            "sectionTitle": m.moduleName,
-            "issue": "; ".join(m.issues) if m.issues else m.summary,
-            "strategy": m.actionableSolution,
-            "currentSnippet": m.evidenceQuotes[0] if m.evidenceQuotes else "",
-            "suggestedReplacement": m.proposedRewrite,
-            "status": m.status
-        }
+        ActionableSolutionItem(
+            id=f"sol-{m.id}",
+            section=m.targetField,
+            sectionTitle=m.moduleName,
+            issue="; ".join(m.issues) if m.issues else m.summary,
+            strategy=m.actionableSolution,
+            currentSnippet=m.evidenceQuotes[0] if m.evidenceQuotes else "",
+            suggestedReplacement=m.proposedRewrite,
+            status=m.status
+        )
         for m in res.coreModulesAudit
         if m.proposedRewrite and m.targetField
     ]
@@ -442,7 +448,7 @@ async def analyze_cv_profile(req: CVAnalyzeRequest) -> CVAnalyzeResponse:
             timeout=45.0,
             max_retries=2
         )
-        structured_llm = llm.with_structured_output(CVAnalyzeResponse)
+        structured_llm = llm.with_structured_output(CVAnalyzeResponse, method="function_calling")
 
         sector = req.sector if req.sector in SECTOR_TAXONOMY else "IT & Software"
         sec_tax = SECTOR_TAXONOMY.get(sector, SECTOR_TAXONOMY["IT & Software"])
@@ -492,7 +498,8 @@ async def analyze_cv_profile(req: CVAnalyzeRequest) -> CVAnalyzeResponse:
             f"Experience: {req.cv.experience}\n"
             f"Projects: {req.cv.projects}\n"
             f"Education: {[{'level': e.level, 'major': e.major, 'institution': e.institution, 'year': e.year, 'grade': e.grade} for e in req.cv.education]}\n"
-            f"Certifications: {req.cv.certifications}\n\n"
+            f"Certifications: {req.cv.certifications}\n"
+            f"Raw Document Text (Verbatim): {req.cv.rawText[:3000] if req.cv.rawText else 'N/A'}\n\n"
             f"--- DETERMINISTIC VALIDATION SIGNALS ---\n"
             f"{validation}\n\n"
             f"--- SECTOR BENCHMARK CRITERIA ({sector}) ---\n"

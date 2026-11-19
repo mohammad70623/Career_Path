@@ -10,7 +10,7 @@ except ImportError:
 
 import docx
 from langchain_openai import ChatOpenAI
-from app.schemas import CVProfile
+from app.schemas import CVProfile, ExperienceItem, ProjectItem
 
 def extract_text_from_docx(file_bytes: bytes) -> str:
     """
@@ -91,7 +91,7 @@ async def parse_cv_text(text: str) -> CVProfile:
         temperature=0,
         api_key=os.getenv("OPENAI_API_KEY")
     )
-    structured_llm = llm.with_structured_output(CVProfile)
+    structured_llm = llm.with_structured_output(CVProfile, method="function_calling")
 
     system_prompt = (
         "You are an expert executive resume parser. Extract and structure "
@@ -101,9 +101,10 @@ async def parse_cv_text(text: str) -> CVProfile:
         "Bachelor's, Diploma, HSC / A-Level, and SSC / O-Level entries where present.\n"
         "2. For 'skills', produce a clean, comprehensive comma-separated string of programming languages, "
         "frameworks, tools, and technical competencies.\n"
-        "3. For 'experience', structure entries with Role, Company, Dates, and bulleted achievements.\n"
-        "4. For 'projects', list project titles, tech stacks, and quantifiable outcomes.\n"
-        "5. If links or contact details are found, capture them accurately; otherwise use empty strings."
+        "3. For 'experienceList', extract each job role as an item with: 'role', 'company', 'duration', 'location', and 'description' (bullet points).\n"
+        "4. For 'projectsList', extract each key project as an item with: 'title', 'techStack', 'link', and 'description' (bullet points).\n"
+        "5. For 'experience' and 'projects', produce readable structured text summaries.\n"
+        "6. If links or contact details are found, capture them accurately; otherwise use empty strings."
     )
 
     messages = [
@@ -112,6 +113,35 @@ async def parse_cv_text(text: str) -> CVProfile:
     ]
 
     result: CVProfile = await structured_llm.ainvoke(messages)
+    result.rawText = text
+
+    # Ensure experience and experienceList are both cleanly populated
+    if result.experienceList and not result.experience:
+        lines = []
+        for item in result.experienceList:
+            hdr = " | ".join(filter(None, [item.role, item.company, item.duration, item.location]))
+            desc = item.description or ""
+            lines.append(f"{hdr}\n{desc}" if hdr else desc)
+        result.experience = "\n\n".join(lines).strip()
+    elif result.experience and not result.experienceList:
+        raw_items = CVProfile._parse_exp_str_to_list(result.experience)
+        result.experienceList = [ExperienceItem(**item) for item in raw_items]
+
+    # Ensure projects and projectsList are both cleanly populated
+    if result.projectsList and not result.projects:
+        lines = []
+        for item in result.projectsList:
+            parts = [item.title]
+            if item.techStack: parts.append(f"Stack: {item.techStack}")
+            if item.link: parts.append(item.link)
+            hdr = " | ".join(filter(None, parts))
+            desc = item.description or ""
+            lines.append(f"{hdr}\n{desc}" if hdr else desc)
+        result.projects = "\n\n".join(lines).strip()
+    elif result.projects and not result.projectsList:
+        raw_items = CVProfile._parse_proj_str_to_list(result.projects)
+        result.projectsList = [ProjectItem(**item) for item in raw_items]
+
     return result
 
 async def parse_cv_from_images(base64_images: List[str]) -> CVProfile:
@@ -127,7 +157,7 @@ async def parse_cv_from_images(base64_images: List[str]) -> CVProfile:
         temperature=0,
         api_key=os.getenv("OPENAI_API_KEY")
     )
-    structured_llm = llm.with_structured_output(CVProfile)
+    structured_llm = llm.with_structured_output(CVProfile, method="function_calling")
 
     system_prompt = (
         "You are an expert executive resume parser with optical document intelligence. "
@@ -138,9 +168,10 @@ async def parse_cv_from_images(base64_images: List[str]) -> CVProfile:
         "Bachelor's, Diploma, HSC / A-Level, and SSC / O-Level entries where present.\n"
         "2. For 'skills', produce a clean, comprehensive comma-separated string of programming languages, "
         "frameworks, tools, and technical competencies.\n"
-        "3. For 'experience', structure entries with Role, Company, Dates, and bulleted achievements.\n"
-        "4. For 'projects', list project titles, tech stacks, and quantifiable outcomes.\n"
-        "5. If links or contact details are found, capture them accurately; otherwise use empty strings."
+        "3. For 'experienceList', extract each job role as an item with: 'role', 'company', 'duration', 'location', and 'description' (bullet points).\n"
+        "4. For 'projectsList', extract each key project as an item with: 'title', 'techStack', 'link', and 'description' (bullet points).\n"
+        "5. For 'experience' and 'projects', produce readable structured text summaries.\n"
+        "6. If links or contact details are found, capture them accurately; otherwise use empty strings."
     )
 
     user_content: list = [
@@ -167,6 +198,36 @@ async def parse_cv_from_images(base64_images: List[str]) -> CVProfile:
     ]
 
     result: CVProfile = await structured_llm.ainvoke(messages)
+    if not result.rawText:
+        result.rawText = f"{result.fullName}\n{result.targetRole}\n{result.summary}\n{result.skills}\n{result.experience}\n{result.projects}"
+
+    # Ensure experience and experienceList are both cleanly populated
+    if result.experienceList and not result.experience:
+        lines = []
+        for item in result.experienceList:
+            hdr = " | ".join(filter(None, [item.role, item.company, item.duration, item.location]))
+            desc = item.description or ""
+            lines.append(f"{hdr}\n{desc}" if hdr else desc)
+        result.experience = "\n\n".join(lines).strip()
+    elif result.experience and not result.experienceList:
+        raw_items = CVProfile._parse_exp_str_to_list(result.experience)
+        result.experienceList = [ExperienceItem(**item) for item in raw_items]
+
+    # Ensure projects and projectsList are both cleanly populated
+    if result.projectsList and not result.projects:
+        lines = []
+        for item in result.projectsList:
+            parts = [item.title]
+            if item.techStack: parts.append(f"Stack: {item.techStack}")
+            if item.link: parts.append(item.link)
+            hdr = " | ".join(filter(None, parts))
+            desc = item.description or ""
+            lines.append(f"{hdr}\n{desc}" if hdr else desc)
+        result.projects = "\n\n".join(lines).strip()
+    elif result.projects and not result.projectsList:
+        raw_items = CVProfile._parse_proj_str_to_list(result.projects)
+        result.projectsList = [ProjectItem(**item) for item in raw_items]
+
     return result
 
 async def parse_cv_file(file_bytes: bytes, filename: str) -> CVProfile:
@@ -202,7 +263,9 @@ async def parse_cv_file(file_bytes: bytes, filename: str) -> CVProfile:
 
         # 2. If extracted text has at least 50 characters, use text-based structured parsing
         if len(extracted_text) >= 50:
-            return await parse_cv_text(extracted_text)
+            res = await parse_cv_text(extracted_text)
+            res.rawText = extracted_text
+            return res
 
         # 3. Otherwise (empty or under 50 characters -> scanned / image PDF), render first 2-3 pages as PNG images
         num_pages_to_render = min(len(doc), 3)
@@ -217,13 +280,18 @@ async def parse_cv_file(file_bytes: bytes, filename: str) -> CVProfile:
         if not base64_images:
             raise ValueError("Could not extract readable text or render page images from the uploaded PDF.")
 
-        return await parse_cv_from_images(base64_images)
+        res = await parse_cv_from_images(base64_images)
+        if not res.rawText:
+            res.rawText = extracted_text or f"{res.fullName}\n{res.targetRole}\n{res.summary}\n{res.skills}\n{res.experience}\n{res.projects}"
+        return res
 
     elif ext in ('docx', 'doc'):
         extracted_text = extract_text_from_docx(file_bytes)
         if not extracted_text or len(extracted_text.strip()) < 15:
             raise ValueError("Could not extract readable text from the uploaded DOCX document.")
-        return await parse_cv_text(extracted_text)
+        res = await parse_cv_text(extracted_text)
+        res.rawText = extracted_text
+        return res
 
     else:
         raise ValueError(f"Unsupported file format '.{ext}'. Please upload a PDF or DOCX file.")

@@ -72,6 +72,48 @@ export const enhanceCVSection = async (sectionType, content, targetRole = '') =>
 };
 
 /**
+ * Prepares and normalizes CV data for backend endpoints.
+ * Symmetrically serializes structured experience and project arrays into standard strings,
+ * while preserving experienceList, projectsList, and rawText.
+ */
+export const formatCvForBackend = (cv) => {
+  if (!cv) return cv;
+
+  const formattedExp = Array.isArray(cv.experience)
+    ? cv.experience
+        .map((e) => {
+          const hdr = [e.role, e.company, e.duration, e.location].filter(Boolean).join(' | ');
+          return hdr ? `${hdr}\n${e.description || ''}`.trim() : (e.description || '').trim();
+        })
+        .filter(Boolean)
+        .join('\n\n')
+    : (cv.experience || '');
+
+  const formattedProj = Array.isArray(cv.projects)
+    ? cv.projects
+        .map((p) => {
+          const parts = [];
+          if (p.title) parts.push(p.title);
+          if (p.techStack) parts.push(`Stack: ${p.techStack}`);
+          if (p.link) parts.push(p.link);
+          const hdr = parts.join(' | ');
+          return hdr ? `${hdr}\n${p.description || ''}`.trim() : (p.description || '').trim();
+        })
+        .filter(Boolean)
+        .join('\n\n')
+    : (cv.projects || '');
+
+  return {
+    ...cv,
+    experience: formattedExp,
+    projects: formattedProj,
+    experienceList: Array.isArray(cv.experience) ? cv.experience : (cv.experienceList || []),
+    projectsList: Array.isArray(cv.projects) ? cv.projects : (cv.projectsList || []),
+    rawText: cv.rawText || ''
+  };
+};
+
+/**
  * Executes the LangGraph 3-node prediction workflow on FastAPI.
  * @param {Object} cv - CVProfile object
  * @param {Object} filters - JobFilters object
@@ -79,8 +121,9 @@ export const enhanceCVSection = async (sectionType, content, targetRole = '') =>
  */
 export const predictCareerPaths = async (cv, filters) => {
   try {
+    const payloadCv = formatCvForBackend(cv);
     const response = await apiClient.post('/api/career/predict', {
-      cv,
+      cv: payloadCv,
       filters
     });
 
@@ -193,14 +236,23 @@ export const runClientUniversalCvAnalysis = ({ cv, mode = 'general', sector = 'I
   const chosenSector = SECTOR_TAXONOMY[sector] ? sector : 'IT & Software';
   const sectorInfo = SECTOR_TAXONOMY[chosenSector];
 
+  const expText = Array.isArray(cv.experience)
+    ? cv.experience.map((e) => `${e.role || ''} ${e.company || ''} ${e.description || ''}`).join(' ')
+    : (cv.experience || '');
+
+  const projText = Array.isArray(cv.projects)
+    ? cv.projects.map((p) => `${p.title || ''} ${p.techStack || ''} ${p.description || ''}`).join(' ')
+    : (cv.projects || '');
+
   const cvText = [
     cv.fullName || '',
     cv.targetRole || '',
     cv.summary || '',
     cv.skills || '',
-    cv.experience || '',
-    cv.projects || '',
+    expText,
+    projText,
     cv.certifications || '',
+    cv.rawText || '',
     (cv.education || []).map((e) => `${e.level} ${e.major} ${e.institution}`).join(' ')
   ].join(' ');
 
@@ -569,8 +621,9 @@ NextGen Job Scraper & Scam Verifier | Stack: Python, BeautifulSoup, Tavily API, 
  */
 export const analyzeUniversalCV = async ({ cv, mode = 'general', sector = 'IT & Software', jobDescription = '' }) => {
   try {
+    const payloadCv = formatCvForBackend(cv);
     const response = await apiClient.post('/api/cv/analyze', {
-      cv,
+      cv: payloadCv,
       mode,
       sector,
       job_description: jobDescription

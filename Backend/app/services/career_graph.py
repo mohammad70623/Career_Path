@@ -104,7 +104,7 @@ async def generate_career_paths(state: dict) -> CareerPredictResponse:
         temperature=0.2,
         api_key=os.getenv("OPENAI_API_KEY")
     )
-    structured_llm = llm.with_structured_output(CareerPredictResponse)
+    structured_llm = llm.with_structured_output(CareerPredictResponse, method="function_calling")
 
     location_str = f"{filters.city}, {filters.country}".strip(", ")
     target_currency = "BDT" if filters.country == "Bangladesh" else "USD"

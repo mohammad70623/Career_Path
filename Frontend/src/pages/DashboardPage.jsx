@@ -251,8 +251,15 @@ export const DashboardPage = () => {
     if (skillsCount >= 8) score += 8;
     else if (skillsCount >= 4) score += 4;
 
-    if (cvData.experience && cvData.experience.length > 50) score += 8;
-    if (cvData.projects && cvData.projects.length > 40) score += 8;
+    const hasExp = Array.isArray(cvData.experience)
+      ? cvData.experience.length > 0
+      : (cvData.experience && cvData.experience.length > 50);
+    if (hasExp) score += 8;
+
+    const hasProj = Array.isArray(cvData.projects)
+      ? cvData.projects.length > 0
+      : (cvData.projects && cvData.projects.length > 40);
+    if (hasProj) score += 8;
 
     if (Array.isArray(cvData.education) && cvData.education.length >= 2) score += 8;
     else if (Array.isArray(cvData.education) && cvData.education.length === 1) score += 4;
