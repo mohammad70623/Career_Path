@@ -598,12 +598,25 @@ export const analyzeUniversalCV = async ({ cv, mode = 'general', sector = 'IT & 
   }
 };
 
+/**
+ * Universal CV Analysis alias supporting analyzeCVUniversal(cvData, config) signature
+ * @param {Object} cvData - Full CV data object
+ * @param {Object} config - { mode, sector, jobDescription }
+ */
+export const analyzeCVUniversal = async (cvData, config = {}) => {
+  const mode = config.mode || 'general';
+  const sector = config.sector || 'IT & Software';
+  const jobDescription = config.jobDescription || config.job_description || '';
+  return analyzeUniversalCV({ cv: cvData, mode, sector, jobDescription });
+};
+
 export default {
   checkBackendHealth,
   parseCVFile,
   enhanceCVSection,
   predictCareerPaths,
   analyzeUniversalCV,
+  analyzeCVUniversal,
   runClientUniversalCvAnalysis,
   SECTOR_TAXONOMY
 };

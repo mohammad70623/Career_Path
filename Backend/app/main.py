@@ -14,7 +14,9 @@ from app.schemas import (
     CareerPredictRequest,
     CareerPredictResponse,
     CVEnhanceRequest,
-    CVEnhanceResponse
+    CVEnhanceResponse,
+    CVAnalyzeRequest,
+    CVAnalyzeResponse
 )
 from app.services.cv_parser import (
     extract_text_from_file,
@@ -22,6 +24,7 @@ from app.services.cv_parser import (
     parse_cv_file,
     enhance_cv_section
 )
+from app.services.cv_analyzer import analyze_cv_profile
 from app.services.career_graph import predict_career_paths
 
 app = FastAPI(
@@ -137,6 +140,22 @@ async def predict_career_endpoint(req: CareerPredictRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error running career prediction graph: {str(e)}"
+        )
+
+@app.post("/api/cv/analyze", response_model=CVAnalyzeResponse)
+async def analyze_cv_endpoint(req: CVAnalyzeRequest):
+    """
+    Step 6B: Universal Multi-Sector AI CV Analysis & JD Match Engine.
+    Evaluates 12 core modules across 8 weighted criteria (100 pts max)
+    with real evidence quotes and ready-to-use section rewrites.
+    """
+    try:
+        result = await analyze_cv_profile(req)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error analyzing CV profile: {str(e)}"
         )
 
 if __name__ == "__main__":

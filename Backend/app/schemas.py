@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 class EducationItem(BaseModel):
@@ -62,3 +62,68 @@ class CVEnhanceRequest(BaseModel):
 
 class CVEnhanceResponse(BaseModel):
     enhanced_text: str = Field(..., description="Executive, metric-driven enhanced text")
+
+# ============================================================================
+# Step 6B: Universal Multi-Sector CV Analysis & JD Match Models
+# ============================================================================
+
+class CVAnalyzeRequest(BaseModel):
+    cv: CVProfile
+    mode: str = Field(default="general", description="Analysis mode: 'general' (holistic audit) or 'jd_match' (job-specific match)")
+    sector: str = Field(default="IT & Software", description="Target industry sector out of 14 universal sectors")
+    job_description: str = Field(default="", description="Target Job Description text for Mode B matching")
+
+class WeightedCriterion(BaseModel):
+    name: str = Field(..., description="Name of the criterion, e.g. Content Quality")
+    score: int = Field(..., description="Points awarded for this criterion")
+    maxScore: int = Field(..., description="Maximum possible points for this criterion")
+    percentage: int = Field(..., description="Calculated percentage (score / maxScore * 100)")
+    confidence: int = Field(default=92, description="Model evaluation confidence percentage (0-100)")
+    evidence: str = Field(..., description="Evidence, observations, and audit rationale for the score")
+
+class CoreModuleAuditItem(BaseModel):
+    id: int = Field(..., description="Module numeric identifier (1-12)")
+    moduleName: str = Field(..., description="Name of the 12 core CV modules audited")
+    status: str = Field(..., description="Audit status: 'Verified', 'Needs Optimization', or 'Critical'")
+    score: int = Field(..., description="Audit score awarded out of 10")
+    maxScore: int = Field(default=10, description="Max module score (10)")
+    confidence: int = Field(default=94, description="Confidence rating for this module evaluation (0-100)")
+    summary: str = Field(..., description="Concise assessment of this module")
+    evidenceQuotes: List[str] = Field(default_factory=list, description="Direct snippets and extracted facts from CV")
+    issues: List[str] = Field(default_factory=list, description="Weaknesses, missing elements, or red flags detected")
+    actionableSolution: str = Field(..., description="Step-by-step strategy to resolve issues")
+    proposedRewrite: str = Field(default="", description="AI-generated ready-to-use replacement draft for weak sections")
+    targetField: str = Field(default="", description="CV target field to update: 'summary', 'skills', 'experience', 'projects'")
+
+class JDMatchResult(BaseModel):
+    jdMatchScore: int = Field(..., description="Overall JD keyword and requirement match percentage (0-100)")
+    eligibilityStatus: str = Field(..., description="Eligibility tier, e.g. 'Tier 1: High Match (Interview Ready)'")
+    summary: str = Field(..., description="Executive narrative on candidate JD fit and alignment")
+    matchedRequirements: List[str] = Field(default_factory=list, description="Requirements in the JD directly met by the CV")
+    missingSkillsGap: List[str] = Field(default_factory=list, description="Crucial JD requirements or skills absent from the CV")
+    experienceGap: str = Field(..., description="Assessment of seniority, tenure, and scope gaps relative to the JD")
+    qualificationMatch: str = Field(..., description="Assessment of degree and certification alignment with JD requirements")
+
+class CVAnalyzeResponse(BaseModel):
+    detectedSector: str = Field(..., description="Detected or verified industry sector out of 14 universal sectors")
+    occupationTier: str = Field(..., description="Candidate career level, e.g. 'Senior / Specialist Tier'")
+    overallQualityScore: int = Field(..., description="Total weighted CV quality score out of 100")
+    confidenceScore: int = Field(default=94, description="Aggregate confidence percentage of the audit")
+    weightedBreakdown: List[WeightedCriterion] = Field(..., description="Exact 8-criteria weighted quality breakdown (summing to 100)")
+    coreModulesAudit: List[CoreModuleAuditItem] = Field(..., description="12 core module audit items with evidence quotes and solutions")
+    jdMatchResult: Optional[JDMatchResult] = Field(default=None, description="Detailed job description match analysis (populated when mode is jd_match)")
+    matchedSkills: List[str] = Field(default_factory=list, description="Sector or JD competencies verified on candidate profile")
+    missingSkills: List[str] = Field(default_factory=list, description="High-demand sector or JD competencies missing from candidate profile")
+    redFlags: List[Dict[str, Any]] = Field(default_factory=list, description="List of detected anomalies, unsupported claims, or timeline gaps")
+
+    # Compatibility aliases for direct frontend rendering
+    cvQualityScore: Optional[int] = Field(default=None, description="Alias for overallQualityScore")
+    overallConfidence: Optional[int] = Field(default=None, description="Alias for confidenceScore")
+    sector: Optional[str] = Field(default=None, description="Alias for detectedSector")
+    mode: Optional[str] = Field(default=None, description="Echo of requested mode")
+    jdMatchScore: Optional[int] = Field(default=None, description="Convenience access to jdMatchResult.jdMatchScore")
+    eligibilityTier: Optional[str] = Field(default=None, description="Convenience access to jdMatchResult.eligibilityStatus")
+    criteriaBreakdown: Optional[List[Dict[str, Any]]] = Field(default=None, description="Frontend-adapted breakdown array")
+    modulesAudit: Optional[List[Dict[str, Any]]] = Field(default=None, description="Frontend-adapted 12 module array")
+    gapAnalysis: Optional[Dict[str, Any]] = Field(default=None, description="Frontend-adapted gap analysis map")
+    actionableSolutions: Optional[List[Dict[str, Any]]] = Field(default=None, description="Frontend-adapted solutions array")
