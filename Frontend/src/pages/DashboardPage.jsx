@@ -4,6 +4,7 @@ import {
   FileText,
   Briefcase,
   ShieldCheck,
+  ShieldAlert,
   Milestone,
   ArrowRight,
   Globe,
@@ -232,7 +233,15 @@ const getRecentJobChecks = (country, targetRole = 'Software Engineer') => {
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
-  const { cvData, jobFilters, roadmapSteps, cvAnalysis } = useCareer();
+  const {
+    cvData,
+    jobFilters,
+    roadmapSteps,
+    cvAnalysis,
+    liveJobs,
+    fraudScanHistory,
+    scamStats
+  } = useCareer();
 
   // Dynamic ATS CV Strength Score Calculation
   const calculateAtsScore = () => {
@@ -388,7 +397,7 @@ export const DashboardPage = () => {
             <div className="flex flex-wrap items-baseline justify-between gap-2 mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold tracking-tight text-primary">
-                  142
+                  {scamStats?.verifiedCount ?? (liveJobs?.filter((j) => j.safetyStatus === 'safe').length || 142)}
                 </span>
                 <span className="text-sm font-medium text-slate-500">Openings</span>
               </div>
@@ -423,12 +432,12 @@ export const DashboardPage = () => {
             <div className="flex flex-wrap items-baseline justify-between gap-2 mt-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold tracking-tight text-emerald-600">
-                  3
+                  {scamStats?.blockedCount ?? (liveJobs?.filter((j) => j.safetyStatus === 'scam').length || 3)}
                 </span>
                 <span className="text-sm font-medium text-slate-500">Scams</span>
               </div>
               <span className="badge badge-sm bg-accent/15 text-accent font-semibold px-2 py-0.5 border border-accent/20 shrink-0">
-                14 Checked
+                {scamStats?.totalScanned ?? ((liveJobs?.length || 0) + (fraudScanHistory?.length || 0))} Checked
               </span>
             </div>
           </div>
@@ -696,16 +705,19 @@ export const DashboardPage = () => {
               </tr>
             </thead>
             <tbody>
-              {recentJobs.map((job) => {
-                const isSafe = job.status === 'safe';
+              {(liveJobs && liveJobs.length > 0 ? liveJobs.slice(0, 4) : recentJobs).map((job) => {
+                const isSafe = job.safetyStatus === 'safe' || job.status === 'safe';
+                const isScam = job.safetyStatus === 'scam';
+                const matchVal = job.cvMatchScore ? `${job.cvMatchScore}% Match` : (job.matchScore || '92% Match');
+                const noteText = job.description || job.notes || 'Verified corporate recruitment channel.';
                 return (
                   <tr key={job.id} className="border-b border-base-200 hover:bg-base-200/40 transition-colors">
                     <td className="font-bold text-primary min-w-[220px] max-w-[340px]">
                       <div className="leading-snug" title={job.title}>
                         {job.title}
                       </div>
-                      <div className="text-[11px] text-base-content/55 font-normal leading-relaxed mt-1" title={job.notes}>
-                        {job.notes}
+                      <div className="text-[11px] text-base-content/55 font-normal leading-relaxed mt-1 line-clamp-1" title={noteText}>
+                        {noteText}
                       </div>
                     </td>
                     <td className="font-semibold text-base-content/85 min-w-[130px]" title={job.company}>
@@ -716,7 +728,7 @@ export const DashboardPage = () => {
                     </td>
                     <td>
                       <span className="font-semibold text-primary font-mono bg-base-200 px-2 py-0.5 rounded whitespace-nowrap">
-                        {job.matchScore}
+                        {matchVal}
                       </span>
                     </td>
                     <td>
@@ -724,6 +736,11 @@ export const DashboardPage = () => {
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Verified Safe</span>
+                        </span>
+                      ) : isScam ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
+                          <ShieldAlert className="w-3 h-3 text-rose-600" />
+                          <span>Scam Alert</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">

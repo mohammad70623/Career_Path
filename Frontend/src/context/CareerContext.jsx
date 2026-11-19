@@ -224,6 +224,175 @@ export const initialJobFilters = {
   workAuth: 'Any'
 };
 
+/**
+ * Authentic Baseline Discovered Jobs for Live Jobs & ML Guard Feed
+ */
+export const initialLiveJobs = [
+  {
+    id: 'job-live-1',
+    title: 'Senior Machine Learning & Systems Engineer',
+    company: 'Brain Station 23',
+    location: 'Dhaka, Bangladesh',
+    salary: 'BDT 160,000 – 240,000 / mo',
+    jobType: 'Full-time • Hybrid',
+    postedAt: '3 hours ago',
+    source: 'Corporate Careers',
+    applyUrl: 'https://brainstation-23.com/careers',
+    cvMatchScore: 96,
+    fraudProbability: 4,
+    safetyStatus: 'safe',
+    riskSignals: [
+      { type: 'trust', text: 'Verified corporate domain (brainstation-23.com)' },
+      { type: 'trust', text: 'Physical office registered at Mohakhali C/A, Dhaka' },
+      { type: 'trust', text: 'Salary aligned with South Asian senior engineering benchmarks' },
+      { type: 'trust', text: 'Clear technical requirements (PyTorch, FastAPI, Docker, Kubernetes)' }
+    ],
+    description: 'We are seeking an experienced ML Engineer to design and deploy real-time low-latency financial fraud detection and recommendation models. The role involves managing distributed PyTorch pipelines and deploying on Triton/Kubernetes.'
+  },
+  {
+    id: 'job-live-2',
+    title: 'Lead AI Platform Architect',
+    company: 'bKash Limited',
+    location: 'Dhaka, Bangladesh',
+    salary: 'BDT 190,000 – 320,000 / mo',
+    jobType: 'Full-time • On-site',
+    postedAt: '1 day ago',
+    source: 'LinkedIn Talent',
+    applyUrl: 'https://bkash.com/career',
+    cvMatchScore: 92,
+    fraudProbability: 2,
+    safetyStatus: 'safe',
+    riskSignals: [
+      { type: 'trust', text: 'Tier-1 regulated financial institution' },
+      { type: 'trust', text: 'Official enterprise recruiting portal' },
+      { type: 'trust', text: 'Standard multi-stage technical and behavioral review' }
+    ],
+    description: 'Lead the next generation of scalable AI microservices for Bangladesh\'s largest MFS platform. You will spearhead high-throughput transaction anomaly modeling and mentor junior data science squads.'
+  },
+  {
+    id: 'job-live-3',
+    title: 'Remote Data Entry & Form Filling (Registration Fee Mandatory)',
+    company: 'Online Freelance Direct Network',
+    location: 'Remote / Telegram Only',
+    salary: 'BDT 90,000 – 150,000 / week',
+    jobType: 'Part-time • Remote',
+    postedAt: '4 hours ago',
+    source: 'Telegram Channel',
+    applyUrl: 'https://t.me/freelance_fast_cash_bd',
+    cvMatchScore: 34,
+    fraudProbability: 88,
+    safetyStatus: 'scam',
+    riskSignals: [
+      { type: 'risk', text: 'Severe Red Flag: Candidate required to pay refundable registration & software activation fee ($25 / BDT 3,000)' },
+      { type: 'risk', text: 'Recruiter communication restricted exclusively to Telegram channel' },
+      { type: 'risk', text: 'Unrealistic compensation (BDT 150,000/week for basic data entry without technical prerequisites)' },
+      { type: 'risk', text: 'Anonymous organization with zero registered corporate records or physical presence' }
+    ],
+    description: 'URGENT HIRING: Earn up to 150K weekly from home! Simple copy paste and form submission work. No technical experience required. To activate assignment software, candidate must send 3000 BDT security deposit via bKash/Nagad.'
+  },
+  {
+    id: 'job-live-4',
+    title: 'Data & Computer Vision Engineer',
+    company: 'ShopUp Labs',
+    location: 'Dhaka, Bangladesh',
+    salary: 'BDT 140,000 – 220,000 / mo',
+    jobType: 'Full-time • Hybrid',
+    postedAt: '2 days ago',
+    source: 'Bdjobs Verified',
+    applyUrl: 'https://shopup.com.bd',
+    cvMatchScore: 89,
+    fraudProbability: 6,
+    safetyStatus: 'safe',
+    riskSignals: [
+      { type: 'trust', text: 'Verified logistics enterprise with active venture backing' },
+      { type: 'trust', text: 'Published LinkedIn employee roster (>500 staff)' },
+      { type: 'trust', text: 'Standard corporate interview process without fee requests' }
+    ],
+    description: 'Seeking a CV & deep learning specialist to automate warehouse package scanning and route optimization algorithms utilizing OpenCV and YOLO.'
+  },
+  {
+    id: 'job-live-5',
+    title: 'Global AI Model Evaluator ($500/Day via WhatsApp)',
+    company: 'International Data Talent Inc',
+    location: 'Remote / Global',
+    salary: '$3,500 / week',
+    jobType: 'Contract • Remote',
+    postedAt: '6 hours ago',
+    source: 'WhatsApp Invite',
+    applyUrl: 'https://wa.me/message/FAKEJOBSCAMP9',
+    cvMatchScore: 42,
+    fraudProbability: 92,
+    safetyStatus: 'scam',
+    riskSignals: [
+      { type: 'risk', text: 'Unsolicited WhatsApp recruiter outreach from non-business phone number' },
+      { type: 'risk', text: 'Free webmail contact address (talent_recruit_global24@gmail.com)' },
+      { type: 'risk', text: 'Promises $500 daily for clicking tasks without formal contract' },
+      { type: 'risk', text: 'Demands cryptocurrency wallet connection for task settlement' }
+    ],
+    description: 'Work from home 2 hours daily evaluating AI responses. Immediate payment $500/day. Message our hiring manager directly on WhatsApp. Complete 3 trial tasks to receive your first payout.'
+  },
+  {
+    id: 'job-live-6',
+    title: 'Applied AI & Python Developer',
+    company: 'Optimizely Asia Tech Hub',
+    location: 'Dhaka, Bangladesh',
+    salary: 'BDT 150,000 – 260,000 / mo',
+    jobType: 'Full-time • Hybrid',
+    postedAt: '3 days ago',
+    source: 'Greenhouse Board',
+    applyUrl: 'https://boards.greenhouse.io/optimizely',
+    cvMatchScore: 94,
+    fraudProbability: 3,
+    safetyStatus: 'safe',
+    riskSignals: [
+      { type: 'trust', text: 'Public SaaS company with global enterprise presence' },
+      { type: 'trust', text: 'Official Greenhouse applicant tracking system link' },
+      { type: 'trust', text: 'Competitive health insurance, provident fund, and stock options' }
+    ],
+    description: 'Build enterprise experimentation and personalization engines using Python, FastAPI, and AWS. Ideal for engineers with experience in high-concurrency microservices and real-time experimentation.'
+  }
+];
+
+/**
+ * Baseline Audit & Scan History for ML Fraud Guard
+ */
+export const initialFraudScanHistory = [
+  {
+    id: 'scan-1',
+    jobTitle: 'Remote Data Entry & Form Filling',
+    company: 'Online Freelance Direct Network',
+    offeredSalary: 'BDT 90,000 – 150,000 / week',
+    recruiterContact: 't.me/freelance_fast_cash_bd',
+    timestamp: 'Today at 01:15 AM',
+    fraudProbability: 88,
+    safetyStatus: 'scam',
+    confidence: 94,
+    verdictSummary: 'High probability of fraudulent recruitment. The listing requests upfront payments for software activation and directs communication to a Telegram group.',
+    signals: [
+      { type: 'risk', text: 'Upfront registration fee demanded via mobile financial services' },
+      { type: 'risk', text: 'Telegram redirect channel with anonymous administrators' },
+      { type: 'risk', text: 'Compensation deviates 450% above regional market median' }
+    ]
+  },
+  {
+    id: 'scan-2',
+    jobTitle: 'Senior Machine Learning & Systems Engineer',
+    company: 'Brain Station 23',
+    offeredSalary: 'BDT 160,000 – 240,000 / mo',
+    recruiterContact: 'hr@brainstation-23.com',
+    timestamp: 'Yesterday at 04:30 PM',
+    fraudProbability: 4,
+    safetyStatus: 'safe',
+    confidence: 97,
+    verdictSummary: 'Verified authentic corporate listing. Organization has established registered legal entity, corporate domain email, and realistic compensation.',
+    signals: [
+      { type: 'trust', text: 'Official corporate domain email (@brainstation-23.com)' },
+      { type: 'trust', text: 'Registered enterprise headquarters in Mohakhali, Dhaka' },
+      { type: 'trust', text: 'No upfront fee requests or informal communication channels' }
+    ]
+  }
+];
+
 export const CareerContext = createContext(null);
 
 export const CareerProvider = ({ children }) => {
@@ -235,6 +404,59 @@ export const CareerProvider = ({ children }) => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [roadmapSteps, setRoadmapSteps] = useState([]);
   const [applicationDrafts, setApplicationDrafts] = useState([]);
+
+  // Live Jobs & ML Scam Guard States
+  const [liveJobs, setLiveJobs] = useState(initialLiveJobs);
+  const [fraudScanHistory, setFraudScanHistory] = useState(initialFraudScanHistory);
+  const [scamStats, setScamStats] = useState({
+    verifiedCount: 142,
+    blockedCount: 3,
+    totalScanned: 14
+  });
+
+  // Save a job directly into the Applications Tracker
+  const saveJobToApplications = (job) => {
+    if (!job) return;
+    const alreadySaved = applicationDrafts.some(
+      (app) => app.jobId === job.id || (app.title === job.title && app.company === job.company)
+    );
+    if (alreadySaved) {
+      return false;
+    }
+
+    const newApp = {
+      id: `app-${Date.now()}`,
+      jobId: job.id,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      salary: job.salary,
+      status: 'Draft',
+      appliedDate: new Date().toISOString().split('T')[0],
+      source: job.source || 'Live Jobs',
+      applyUrl: job.applyUrl || '',
+      matchScore: job.cvMatchScore || 85
+    };
+
+    setApplicationDrafts((prev) => [newApp, ...prev]);
+    return true;
+  };
+
+  const isJobSaved = (jobId) => {
+    return applicationDrafts.some((app) => app.jobId === jobId);
+  };
+
+  // Add a newly verified fraud scan result
+  const addFraudScanResult = (result) => {
+    if (!result) return;
+    setFraudScanHistory((prev) => [result, ...prev]);
+    setScamStats((prev) => ({
+      ...prev,
+      totalScanned: prev.totalScanned + 1,
+      blockedCount: result.safetyStatus === 'scam' || result.safetyStatus === 'warning' ? prev.blockedCount + 1 : prev.blockedCount,
+      verifiedCount: result.safetyStatus === 'safe' ? prev.verifiedCount + 1 : prev.verifiedCount
+    }));
+  };
 
   // Universal Multi-Sector AI CV Analysis & Optimization states
   const [cvAnalysis, setCvAnalysis] = useState(null);
@@ -430,6 +652,17 @@ export const CareerProvider = ({ children }) => {
     // Roadmap & Steps
     roadmapSteps,
     setRoadmapSteps,
+
+    // Live Jobs & ML Scam Guard
+    liveJobs,
+    setLiveJobs,
+    fraudScanHistory,
+    setFraudScanHistory,
+    scamStats,
+    setScamStats,
+    saveJobToApplications,
+    isJobSaved,
+    addFraudScanResult,
 
     // Application & Cover letter drafts
     applicationDrafts,
