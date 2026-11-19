@@ -417,3 +417,73 @@ class CVAnalyzeResponse(BaseModel):
     modulesAudit: Optional[List[ModuleAuditItem]] = Field(default=None, description="Frontend-adapted 12 module array")
     gapAnalysis: Optional[GapAnalysisItem] = Field(default=None, description="Frontend-adapted gap analysis map")
     actionableSolutions: Optional[List[ActionableSolutionItem]] = Field(default=None, description="Frontend-adapted solutions array")
+
+# ============================================================================
+# Live Jobs & ML Fraud Guard Models
+# ============================================================================
+
+class JobFraudCheckRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    title: str = Field(default="", description="Job title or headline")
+    company: str = Field(default="", description="Company or hiring organization name")
+    location: str = Field(default="", description="Location or remote indicator")
+    salary: str = Field(default="", description="Offered compensation or hourly/monthly rate")
+    recruiterEmail: str = Field(default="", description="Recruiter email address or contact handle")
+    applyUrl: str = Field(default="", description="Application URL or messaging link")
+    description: str = Field(default="", description="Full job description, requirements, or communication transcript")
+
+class JobFraudCheckResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    fraudProbability: int = Field(default=5, description="Calculated scam/fraud probability (0-100)")
+    confidenceScore: int = Field(default=95, description="Model evaluation confidence (0-100)")
+    safetyStatus: str = Field(default="Verified Safe", description="'Verified Safe', 'Caution / Unverified', or 'High Scam Risk'")
+    modelSource: str = Field(default="Hybrid NLP & Heuristic Classifier", description="Source model used for evaluation")
+    riskSignals: List[str] = Field(default_factory=list, description="Human-readable trust and risk evidence signals")
+
+class LiveJobItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default="", description="Unique job listing ID")
+    title: str = Field(default="", description="Job title")
+    company: str = Field(default="", description="Company name")
+    location: str = Field(default="", description="Job location")
+    salary: str = Field(default="", description="Salary range")
+    jobType: str = Field(default="Full-time", description="Job type, e.g. Full-time, Hybrid, Remote")
+    postedAt: str = Field(default="Recently", description="Posting timestamp or relative age")
+    source: str = Field(default="Direct Portal", description="Job board source e.g. LinkedIn, Bdjobs, Greenhouse")
+    applyUrl: str = Field(default="", description="Direct application link")
+    cvMatchScore: int = Field(default=85, description="Candidate CV match percentage (0-100)")
+    fraudProbability: int = Field(default=5, description="Scam probability score (0-100)")
+    safetyStatus: str = Field(default="Verified Safe", description="'Verified Safe', 'Caution / Unverified', or 'High Scam Risk'")
+    riskSignals: List[str] = Field(default_factory=list, description="Trust and risk indicators")
+    description: str = Field(default="", description="Job overview, responsibilities, and requirements")
+
+class LiveJobsSearchRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    cv: CVProfile
+    filters: JobFilters = Field(default_factory=JobFilters)
+    useFilters: bool = Field(default=False, description="When False, searches broad CV-matched live jobs across regions. When True, applies strict location and work filters.")
+
+class LiveJobsSearchResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    jobs: List[LiveJobItem] = Field(default_factory=list, description="List of verified live jobs with ML scam guard evaluations")
+    totalFound: int = Field(default=0, description="Total jobs found")
+    verifiedSafeCount: int = Field(default=0, description="Count of verified safe listings")
+    flaggedCount: int = Field(default=0, description="Count of caution or scam listings")
+    queryUsed: str = Field(default="", description="Exact search query used for live web crawl")
+
+class RawExtractedJob(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    title: str = Field(default="", description="Job title")
+    company: str = Field(default="", description="Company name")
+    location: str = Field(default="", description="City, Country or Remote")
+    salary: str = Field(default="Competitive Market Rate", description="Realistic salary range")
+    jobType: str = Field(default="Full-time • Hybrid", description="Employment type and work mode")
+    postedAt: str = Field(default="Today", description="Relative time posted e.g. 2 hours ago, 1 day ago")
+    source: str = Field(default="Corporate Portal", description="Source portal e.g. LinkedIn, Bdjobs, Greenhouse, Indeed")
+    applyUrl: str = Field(default="", description="Direct link or corporate portal URL")
+    description: str = Field(default="", description="Concise 2-3 sentence summary of the role, responsibilities, and required stack")
+    cvMatchScore: int = Field(default=88, description="Relevance and qualification match with candidate CV (0-100)")
+
+class RawExtractedJobsList(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    jobs: List[RawExtractedJob] = Field(default_factory=list, description="Extracted list of 6 to 10 live job postings")

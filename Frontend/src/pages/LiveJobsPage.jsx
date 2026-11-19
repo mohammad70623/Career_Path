@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -21,7 +21,8 @@ import {
   AlertOctagon,
   Eye,
   SlidersHorizontal,
-  DollarSign
+  DollarSign,
+  Globe
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCareer } from '../context/CareerContext';
@@ -32,6 +33,8 @@ export const LiveJobsPage = () => {
   const {
     cvData,
     jobFilters,
+    updateFilter,
+    resetFilters,
     liveJobs,
     setLiveJobs,
     saveJobToApplications,
@@ -46,6 +49,13 @@ export const LiveJobsPage = () => {
 
   // High Scam Risk Warning Modal State
   const [warningModalJob, setWarningModalJob] = useState(null);
+
+  // Initial load: Fetch live jobs broadly (useFilters = false) if list is empty
+  useEffect(() => {
+    if (!liveJobs || liveJobs.length === 0) {
+      handleFetchLiveJobs(false);
+    }
+  }, []);
 
   // Compute live telemetry metrics
   const telemetry = useMemo(() => {
@@ -87,12 +97,15 @@ export const LiveJobsPage = () => {
   }, [liveJobs, safetyFilter, searchQuery]);
 
   // Re-fetch live jobs using API / Dynamic ML Generator
-  const handleFetchLiveJobs = async () => {
+  const handleFetchLiveJobs = async (useFilters = false) => {
     setIsFetching(true);
-    const toastId = toast.loading(`Scanning live openings for ${cvData.targetRole || 'Engineering'} in ${jobFilters.city}...`, { id: 'job-fetch' });
+    const targetLabel = useFilters
+      ? `${jobFilters.industry || cvData.targetRole || 'Engineering'} in ${jobFilters.city || jobFilters.country || 'Global'}`
+      : `${cvData.targetRole || 'Engineering'}`;
+    const toastId = toast.loading(`Scanning live verified openings for ${targetLabel}...`, { id: 'job-fetch' });
 
     try {
-      const results = await searchLiveJobsWithGuard(cvData, jobFilters);
+      const results = await searchLiveJobsWithGuard(cvData, jobFilters, useFilters);
       if (Array.isArray(results) && results.length > 0) {
         setLiveJobs(results);
         toast.success(`Discovered ${results.length} live jobs (${results.filter(j => j.safetyStatus === 'safe').length} verified safe)`, {
@@ -167,7 +180,7 @@ export const LiveJobsPage = () => {
           {/* Action Button */}
           <div className="flex items-center gap-3">
             <button
-              onClick={handleFetchLiveJobs}
+              onClick={() => handleFetchLiveJobs(false)}
               disabled={isFetching}
               className="btn btn-sm bg-gray-900 hover:bg-black text-white rounded-xl px-4 h-10 font-semibold gap-2 shadow-xs transition-all disabled:opacity-60"
             >
@@ -219,7 +232,129 @@ export const LiveJobsPage = () => {
         </div>
       </div>
 
-      {/* 2. FILTER & SEARCH CONTROLS */}
+      {/* 2. REFINEMENT & TARGETING FILTERS BAR */}
+      <div className="card bg-white border border-gray-200 rounded-2xl p-5 shadow-2xs space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-gray-700" />
+            <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+              Live Search Targeting & Geographic Filters
+            </span>
+            <span className="text-[11px] text-gray-500 font-medium hidden md:inline">
+              (Directs Tavily crawler & market salary benchmarks)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                resetFilters();
+                handleFetchLiveJobs(false);
+              }}
+              disabled={isFetching}
+              className="btn btn-xs btn-ghost text-gray-600 hover:text-gray-900 text-[11px] gap-1 font-semibold"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Reset to All</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleFetchLiveJobs(true)}
+              disabled={isFetching}
+              className="btn btn-xs bg-gray-900 hover:bg-black text-white font-semibold rounded-lg px-3.5 h-7 gap-1.5 shadow-2xs transition-all disabled:opacity-60"
+            >
+              <Filter className="w-3 h-3 text-emerald-400" />
+              <span>Apply Filters</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Inputs Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-gray-100">
+          {/* Country */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-gray-600 block">
+              Country
+            </label>
+            <select
+              value={jobFilters.country || 'Bangladesh'}
+              onChange={(e) => updateFilter('country', e.target.value)}
+              className="w-full text-xs py-1.5 px-2.5 rounded-lg border border-gray-200 bg-gray-50/50 text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            >
+              <option value="Bangladesh">Bangladesh</option>
+              <option value="United States">United States</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="Germany">Germany</option>
+              <option value="Canada">Canada</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Australia">Australia</option>
+              <option value="India">India</option>
+              <option value="Global">Global / Remote</option>
+            </select>
+          </div>
+
+          {/* City */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-gray-600 block">
+              City / State
+            </label>
+            <input
+              type="text"
+              value={jobFilters.city || ''}
+              onChange={(e) => updateFilter('city', e.target.value)}
+              placeholder="e.g. Dhaka, New York, Berlin"
+              className="w-full text-xs py-1.5 px-2.5 rounded-lg border border-gray-200 bg-gray-50/50 text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            />
+          </div>
+
+          {/* Industry / Sector */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-gray-600 block">
+              Industry Sector
+            </label>
+            <select
+              value={jobFilters.industry || 'IT & Software'}
+              onChange={(e) => updateFilter('industry', e.target.value)}
+              className="w-full text-xs py-1.5 px-2.5 rounded-lg border border-gray-200 bg-gray-50/50 text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            >
+              <option value="All">All Sectors</option>
+              <option value="IT & Software">IT & Software</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Banking & Finance">Banking & Finance</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Education">Education</option>
+              <option value="Business & Management">Business & Management</option>
+              <option value="Research & Science">Research & Science</option>
+              <option value="Marketing & Sales">Marketing & Sales</option>
+              <option value="Design & Creative">Design & Creative</option>
+              <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+            </select>
+          </div>
+
+          {/* Job Type / Work Mode */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-gray-600 block">
+              Work Mode / Type
+            </label>
+            <select
+              value={jobFilters.jobType || 'All'}
+              onChange={(e) => updateFilter('jobType', e.target.value)}
+              className="w-full text-xs py-1.5 px-2.5 rounded-lg border border-gray-200 bg-gray-50/50 text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            >
+              <option value="All">All Modes</option>
+              <option value="Full-time • Remote">Remote</option>
+              <option value="Full-time • Hybrid">Hybrid</option>
+              <option value="Full-time • On-site">On-site</option>
+              <option value="Contract">Contract</option>
+              <option value="Part-time">Part-time</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. SAFETY FILTER & KEYWORD CONTROLS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white border border-gray-200 rounded-2xl shadow-2xs">
         {/* Safety Filter Pill Bar */}
         <div className="flex items-center gap-1.5 flex-wrap">

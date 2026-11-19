@@ -1368,18 +1368,34 @@ export const generateClientLiveJobsWithGuard = (cvData = {}, jobFilters = {}) =>
  * Calls backend POST /api/jobs/search, falling back gracefully to client dynamic generator.
  * @param {Object} cvData - Candidate CV Profile
  * @param {Object} jobFilters - Search and geographic filter parameters
+ * @param {boolean} [useFilters=false] - Whether to apply strict geographic/work filters or search broad opportunities
  * @returns {Promise<Array<Object>>} List of jobs with CV match and ML scam probability
  */
-export const searchLiveJobsWithGuard = async (cvData, jobFilters = {}) => {
+export const searchLiveJobsWithGuard = async (cvData, jobFilters = {}, useFilters = false) => {
   try {
     const payloadCv = serializeCVForBackend(cvData);
     const response = await apiClient.post('/api/jobs/search', {
       cv: payloadCv,
-      filters: jobFilters
+      filters: jobFilters || {},
+      useFilters: Boolean(useFilters)
     });
 
     if (response.data && Array.isArray(response.data.jobs) && response.data.jobs.length > 0) {
-      return response.data.jobs;
+      return response.data.jobs.map((j) => {
+        const rawStatus = (j.safetyStatus || '').toLowerCase();
+        const normalizedKey = rawStatus.includes('safe')
+          ? 'safe'
+          : (rawStatus.includes('scam') || rawStatus.includes('high') ? 'scam' : 'warning');
+        return {
+          ...j,
+          safetyStatus: normalizedKey,
+          safetyStatusLabel: j.safetyStatus || 'Verified Safe',
+          riskSignals: (j.riskSignals || []).map((s) => typeof s === 'string' ? {
+            type: s.toLowerCase().includes('red flag') || s.toLowerCase().includes('risk') || s.toLowerCase().includes('shadow') ? 'risk' : 'trust',
+            text: s
+          } : s)
+        };
+      });
     }
 
     return generateClientLiveJobsWithGuard(cvData, jobFilters);
@@ -1399,7 +1415,29 @@ export const scanJobForFraud = async (jobPayload) => {
   try {
     const response = await apiClient.post('/api/jobs/check-fraud', jobPayload);
     if (response.data && response.data.fraudProbability !== undefined) {
-      return response.data;
+      const d = response.data;
+      const rawStatus = (d.safetyStatus || '').toLowerCase();
+      const normalizedKey = rawStatus.includes('safe')
+        ? 'safe'
+        : (rawStatus.includes('scam') || rawStatus.includes('high') ? 'scam' : 'warning');
+      const signals = (d.riskSignals || []).map((s) => typeof s === 'string' ? {
+        type: s.toLowerCase().includes('red flag') || s.toLowerCase().includes('risk') || s.toLowerCase().includes('shadow') ? 'risk' : 'trust',
+        text: s
+      } : s);
+
+      return {
+        ...d,
+        safetyStatus: normalizedKey,
+        safetyStatusLabel: d.safetyStatus || 'Verified Safe',
+        confidence: d.confidenceScore || 95,
+        verdictSummary: d.safetyStatus === 'High Scam Risk'
+          ? 'HIGH SCAM RISK DETECTED. Strong indicators of recruitment fraud, advance-fee solicitation, or unauthorized Telegram communication.'
+          : (d.safetyStatus === 'Caution / Unverified'
+            ? 'CAUTION ADVISED. Listing displays unverified recruiter contacts or generic company details.'
+            : 'VERIFIED SAFE. Authentic enterprise recruitment workflows and transparent qualifications confirmed.'),
+        signals,
+        modelEnsemble: d.modelSource || 'Custom EMSCAD ML Model'
+      };
     }
     return runClientJobFraudMLAudit(jobPayload);
   } catch (error) {

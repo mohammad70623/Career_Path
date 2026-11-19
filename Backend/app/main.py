@@ -16,7 +16,11 @@ from app.schemas import (
     CVEnhanceRequest,
     CVEnhanceResponse,
     CVAnalyzeRequest,
-    CVAnalyzeResponse
+    CVAnalyzeResponse,
+    JobFraudCheckRequest,
+    JobFraudCheckResponse,
+    LiveJobsSearchRequest,
+    LiveJobsSearchResponse
 )
 from app.services.cv_parser import (
     extract_text_from_file,
@@ -26,6 +30,8 @@ from app.services.cv_parser import (
 )
 from app.services.cv_analyzer import analyze_cv_profile
 from app.services.career_graph import predict_career_paths
+from app.services.fraud_detector import evaluate_job_fraud
+from app.services.job_search_service import fetch_and_verify_live_jobs
 
 app = FastAPI(
     title="NextJob AI Career Engine",
@@ -156,6 +162,37 @@ async def analyze_cv_endpoint(req: CVAnalyzeRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error analyzing CV profile: {str(e)}"
+        )
+
+@app.post("/api/jobs/search", response_model=LiveJobsSearchResponse)
+async def search_jobs_endpoint(req: LiveJobsSearchRequest):
+    """
+    Real-time Tavily Job Discovery + Automated ML Scam Guard Verification.
+    Searches matching live job openings and audits each against advance-fee fraud,
+    shadow messaging channels, and phantom employers.
+    """
+    try:
+        response = await fetch_and_verify_live_jobs(req)
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error executing live jobs search & verification: {str(e)}"
+        )
+
+@app.post("/api/jobs/check-fraud", response_model=JobFraudCheckResponse)
+async def check_job_fraud_endpoint(req: JobFraudCheckRequest):
+    """
+    Deep ML Scam & Ghost-Job Fraud Verification on any job posting or recruiter message.
+    Calculates scam probability, confidence score, and explainable trust & risk signals.
+    """
+    try:
+        verdict = evaluate_job_fraud(req)
+        return verdict
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error executing ML fraud evaluation: {str(e)}"
         )
 
 if __name__ == "__main__":
