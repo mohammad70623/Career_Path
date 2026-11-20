@@ -1780,20 +1780,72 @@ export const generateSkillGapRoadmap = async (cvData, targetPath = {}, jobFilter
       ? (targetPath?.trackCategory || 'Core Domain Role')
       : 'Core Domain Role';
 
+    const matchedSkills = typeof targetPath === 'object' && Array.isArray(targetPath?.matchedSkills)
+      ? targetPath.matchedSkills
+      : [];
+
     const missingSkills = typeof targetPath === 'object' && Array.isArray(targetPath?.missingSkills)
       ? targetPath.missingSkills
       : [];
+
+    const reasoning = typeof targetPath === 'object' && targetPath?.reasoning
+      ? targetPath.reasoning
+      : '';
 
     const response = await apiClient.post('/api/roadmap/generate', {
       cv: payloadCv,
       target_role: targetRole,
       track_category: trackCategory,
+      matched_skills: matchedSkills,
       missing_skills: missingSkills,
+      reasoning: reasoning,
       filters: jobFilters || {}
     });
 
     if (response.data && response.data.milestones && Array.isArray(response.data.milestones)) {
-      return response.data;
+      const d = response.data;
+      return {
+        ...d,
+        roleTitle: d.targetRole,
+        estimatedWeeks: d.estimatedTotalWeeks || 8,
+        estimatedDurationLabel: `${d.estimatedTotalWeeks || 8} Weeks (${d.milestones.length} Sprints)`,
+        marketTrendPulse: {
+          overview: d.marketTrendSummary || `Accelerating demand for ${d.targetRole} across regional and global markets.`,
+          hiringVelocity: d.demandIndex || 'High Demand / Accelerated Hiring',
+          topHiringHubs: [jobFilters?.city || 'Dhaka', 'Singapore', 'Berlin', 'London', 'Remote / US'],
+          keyRequirementTrends: (d.criticalMissingGaps || []).slice(0, 3).map((g) => g.name).concat(['Quantifiable Business ROI'])
+        },
+        skillDifferential: {
+          verifiedSkills: (d.verifiedStrengths || []).map((s) => typeof s === 'string' ? { name: s, category: 'Verified Competency', proficiency: 'Mastered', evidence: 'Verified on candidate profile' } : s),
+          criticalMissingGaps: d.criticalMissingGaps || [],
+          emergingSkills: d.emergingSkills || []
+        },
+        milestones: d.milestones.map((m, idx) => ({
+          ...m,
+          id: m.id || `sprint-${idx + 1}`,
+          week: m.weekRange || `Week 0${(idx * 2) + 1}–0${(idx * 2) + 2}`,
+          duration: m.hoursPerWeek || '10–12 hrs/week',
+          description: m.focusSummary || m.description || '',
+          capstoneProject: typeof m.capstoneDeliverable === 'string'
+            ? {
+                title: `${m.title} Deliverable`,
+                deliverable: m.capstoneDeliverable,
+                proofOfWork: 'Public GitHub repository complete with test suite and architecture benchmark report.'
+              }
+            : (m.capstoneProject || {
+                title: `${m.title} Deliverable`,
+                deliverable: m.focusSummary || 'Build and deploy production-grade proof of work.',
+                proofOfWork: 'Verified Codebase & Live URL'
+              }),
+          resources: (m.resources || []).map((r) => ({
+            ...r,
+            platform: r.platform || 'Official Docs',
+            title: r.title || 'Official Technical Documentation',
+            url: r.url || 'https://docs.python.org/',
+            timeEst: r.duration || r.timeEst || '2.0 hrs'
+          }))
+        }))
+      };
     }
 
     return generateClientSkillGapRoadmap(cvData, targetPath, jobFilters);

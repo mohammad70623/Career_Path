@@ -20,7 +20,9 @@ from app.schemas import (
     JobFraudCheckRequest,
     JobFraudCheckResponse,
     LiveJobsSearchRequest,
-    LiveJobsSearchResponse
+    LiveJobsSearchResponse,
+    RoadmapGenerateRequest,
+    RoadmapGenerateResponse
 )
 from app.services.cv_parser import (
     extract_text_from_file,
@@ -32,6 +34,7 @@ from app.services.cv_analyzer import analyze_cv_profile
 from app.services.career_graph import predict_career_paths
 from app.services.fraud_detector import evaluate_job_fraud
 from app.services.job_search_service import fetch_and_verify_live_jobs
+from app.services.roadmap_service import generate_role_roadmap
 
 app = FastAPI(
     title="NextJob AI Career Engine",
@@ -193,6 +196,22 @@ async def check_job_fraud_endpoint(req: JobFraudCheckRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error executing ML fraud evaluation: {str(e)}"
+        )
+
+@app.post("/api/roadmap/generate", response_model=RoadmapGenerateResponse)
+async def generate_roadmap_endpoint(req: RoadmapGenerateRequest):
+    """
+    Real-Time Tavily Market Intelligence + OpenAI Skill Gap & Learning Roadmap Engine.
+    Generates tailored 8-week curriculum, verified strengths, critical missing gaps,
+    emerging competencies, and curated multi-platform resources for the selected career path.
+    """
+    try:
+        response = await generate_role_roadmap(req)
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating skill gap roadmap: {str(e)}"
         )
 
 if __name__ == "__main__":

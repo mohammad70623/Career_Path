@@ -487,3 +487,55 @@ class RawExtractedJob(BaseModel):
 class RawExtractedJobsList(BaseModel):
     model_config = ConfigDict(extra="ignore")
     jobs: List[RawExtractedJob] = Field(default_factory=list, description="Extracted list of 6 to 10 live job postings")
+
+# ============================================================================
+# Skill Gap & Learning Roadmap Models
+# ============================================================================
+
+class LearningResource(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    platform: str = Field(default="Official Docs", description="'YouTube', 'Course', 'Official Docs', or 'GitHub / Practice'")
+    title: str = Field(default="", description="Educational resource title")
+    url: str = Field(default="", description="Verified tutorial, playlist, course, or documentation link")
+    duration: str = Field(default="2.0 hrs", description="Estimated study time, e.g. '2.5 hrs'")
+
+class RoadmapMilestone(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default="", description="Milestone ID, e.g. sprint-1")
+    weekRange: str = Field(default="Week 01–02", description="Week span, e.g. 'Week 01–02'")
+    title: str = Field(default="", description="Milestone sprint title")
+    hoursPerWeek: str = Field(default="10–12 hrs/week", description="Weekly time commitment")
+    focusSummary: str = Field(default="", description="Core focus and pedagogical objective")
+    topics: List[str] = Field(default_factory=list, description="List of key technical topics and competencies")
+    capstoneDeliverable: str = Field(default="", description="Hands-on proof-of-work project deliverable")
+    resources: List[LearningResource] = Field(default_factory=list, description="Curated multi-platform educational resources")
+
+class SkillGapItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(default="", description="Skill name")
+    category: str = Field(default="Core Competency", description="Competency category")
+    priority: str = Field(default="Critical", description="'Critical', 'High', or 'Emerging'")
+    reason: str = Field(default="", description="Pedagogical and market justification")
+
+class RoadmapGenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    cv: CVProfile
+    target_role: str = Field(..., description="Target role title, e.g. 'Senior Machine Learning Engineer'")
+    track_category: str = Field(default="Core Domain Role", description="Career trajectory category")
+    matched_skills: List[str] = Field(default_factory=list, description="Skills candidate already possesses for this role")
+    missing_skills: List[str] = Field(default_factory=list, description="Skills candidate needs to acquire")
+    reasoning: str = Field(default="", description="Contextual career recommendation rationale")
+    filters: Optional[JobFilters] = Field(default=None, description="Candidate location & industry filters")
+
+class RoadmapGenerateResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    targetRole: str = Field(default="", description="Target job title")
+    trackCategory: str = Field(default="Core Domain Role", description="Career track category")
+    readinessPercentage: int = Field(default=75, description="Initial readiness percentage (0-100)")
+    estimatedTotalWeeks: int = Field(default=8, description="Estimated total roadmap duration in weeks")
+    marketTrendSummary: str = Field(default="", description="Summary of current hiring market trends & demand")
+    demandIndex: str = Field(default="High Demand / Accelerated Hiring", description="Market demand velocity indicator")
+    verifiedStrengths: List[str] = Field(default_factory=list, description="Candidate skills aligned with role prerequisites")
+    criticalMissingGaps: List[SkillGapItem] = Field(default_factory=list, description="Essential skills required for competitive hiring")
+    emergingSkills: List[SkillGapItem] = Field(default_factory=list, description="Modern high-leverage tools offering compensation advantage")
+    milestones: List[RoadmapMilestone] = Field(default_factory=list, description="Chronological 8-week structured learning milestones")

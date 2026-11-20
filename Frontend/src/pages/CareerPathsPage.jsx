@@ -491,7 +491,7 @@ export const CareerPathsPage = () => {
                     type="button"
                     onClick={() => {
                       if (setSelectedRoadmapPath) {
-                        setSelectedRoadmapPath(path.title);
+                        setSelectedRoadmapPath(path);
                       }
                       navigate('/skill-gap');
                     }}

@@ -84,12 +84,19 @@ export const SkillGapPage = () => {
 
   // Determine currently active role title
   const activeRoleTitle = useMemo(() => {
-    if (selectedRoadmapPath) return selectedRoadmapPath;
+    if (selectedRoadmapPath) {
+      return typeof selectedRoadmapPath === 'object'
+        ? (selectedRoadmapPath.title || '')
+        : selectedRoadmapPath;
+    }
     return availablePaths[0]?.title || cvData.targetRole || 'Senior Machine Learning & Platform Engineer';
   }, [selectedRoadmapPath, availablePaths, cvData.targetRole]);
 
   // Determine currently active path object
   const activePathObject = useMemo(() => {
+    if (typeof selectedRoadmapPath === 'object' && selectedRoadmapPath?.title) {
+      return selectedRoadmapPath;
+    }
     return (
       availablePaths.find((p) => p.title.toLowerCase() === activeRoleTitle.toLowerCase()) || {
         title: activeRoleTitle,
@@ -100,7 +107,7 @@ export const SkillGapPage = () => {
         missingSkills: ['Advanced System Design', 'High-Concurrency Scaling', 'Cloud Architecture']
       }
     );
-  }, [availablePaths, activeRoleTitle, jobFilters.country]);
+  }, [availablePaths, activeRoleTitle, selectedRoadmapPath, jobFilters.country]);
 
   // Fetch or generate roadmap for current role
   const loadRoadmapForRole = async (targetPath, forceRefresh = false) => {
@@ -173,7 +180,7 @@ export const SkillGapPage = () => {
   }, [activeRoadmap, completedMilestones]);
 
   const handleSelectPath = (path) => {
-    setSelectedRoadmapPath(path.title);
+    setSelectedRoadmapPath(path);
     setShowCustomInput(false);
   };
 
