@@ -38,7 +38,8 @@ export const CareerPathsPage = () => {
     jobFilters,
     careerTrajectories,
     setCareerTrajectories,
-    cvVersion
+    cvVersion,
+    setSelectedRoadmapPath
   } = useCareer();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -488,7 +489,12 @@ export const CareerPathsPage = () => {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => navigate('/skill-gap')}
+                    onClick={() => {
+                      if (setSelectedRoadmapPath) {
+                        setSelectedRoadmapPath(path.title);
+                      }
+                      navigate('/skill-gap');
+                    }}
                     className="btn btn-sm btn-ghost text-base-content/75 hover:text-base-content hover:bg-base-200"
                   >
                     View Skill Gap

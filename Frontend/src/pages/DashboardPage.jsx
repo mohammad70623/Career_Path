@@ -240,7 +240,8 @@ export const DashboardPage = () => {
     cvAnalysis,
     liveJobs,
     fraudScanHistory,
-    scamStats
+    scamStats,
+    completedMilestones
   } = useCareer();
 
   // Dynamic ATS CV Strength Score Calculation
@@ -280,11 +281,12 @@ export const DashboardPage = () => {
 
   const atsScore = calculateAtsScore();
 
-  // Dynamic Roadmap Steps Progress
-  const totalRoadmapSteps = roadmapSteps && roadmapSteps.length > 0 ? roadmapSteps.length : 6;
-  const completedRoadmapSteps = roadmapSteps && roadmapSteps.length > 0
-    ? roadmapSteps.filter((s) => s.completed).length
-    : 4;
+  // Dynamic Milestone & Career Goals Progress (synchronized with /skill-gap)
+  const totalRoadmapSteps = 4; // 4 Core 2-Week Sprints
+  const completedMilestonesCount = completedMilestones
+    ? Object.values(completedMilestones).filter(Boolean).length
+    : 0;
+  const completedRoadmapSteps = completedMilestonesCount;
   const roadmapProgressPct = Math.round((completedRoadmapSteps / totalRoadmapSteps) * 100);
 
   // Dynamic Recent Job Safety Checks for current country & role
@@ -453,14 +455,17 @@ export const DashboardPage = () => {
         </div>
 
         {/* KPI 4: Career Goals Completed */}
-        <div className="flex flex-col justify-between h-full p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs hover:border-base-content/30 transition-all">
+        <div
+          onClick={() => navigate('/skill-gap')}
+          className="flex flex-col justify-between h-full p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs hover:border-gray-400 hover:shadow-xs transition-all cursor-pointer group"
+        >
           <div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+              <span className="text-xs font-bold uppercase tracking-wider text-base-content/60 group-hover:text-gray-900 transition-colors">
                 Career Goals Completed
               </span>
-              <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary shrink-0">
-                <Milestone className="w-4 h-4 text-primary" />
+              <div className="w-8 h-8 rounded-lg bg-base-200 border border-base-300/80 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                <Milestone className="w-4 h-4" />
               </div>
             </div>
 
@@ -473,8 +478,16 @@ export const DashboardPage = () => {
                   ({completedRoadmapSteps}/{totalRoadmapSteps})
                 </span>
               </div>
-              <span className="badge badge-sm bg-secondary/15 text-secondary font-semibold px-2 py-0.5 border border-secondary/20 shrink-0">
-                On Track
+              <span
+                className={`badge badge-sm font-semibold px-2 py-0.5 border shrink-0 ${
+                  roadmapProgressPct === 100
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : roadmapProgressPct >= 50
+                    ? 'bg-emerald-50/70 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+              >
+                {roadmapProgressPct === 100 ? 'Goal Mastered' : roadmapProgressPct >= 50 ? 'On Track' : 'In Progress'}
               </span>
             </div>
           </div>
@@ -482,16 +495,21 @@ export const DashboardPage = () => {
           <div className="pt-3 mt-3 border-t border-gray-100 space-y-1.5">
             <div className="w-full bg-base-200 h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-primary h-full rounded-full transition-all duration-300"
+                className="bg-emerald-500 h-full rounded-full transition-all duration-300"
                 style={{ width: `${roadmapProgressPct}%` }}
               ></div>
             </div>
-            <p
-              className="text-xs text-base-content/65 leading-relaxed line-clamp-1"
-              title="Milestones achieved toward targeted seniority"
-            >
-              Milestones achieved toward target role
-            </p>
+            <div className="flex items-center justify-between text-xs text-base-content/65 leading-relaxed">
+              <span title="Milestones achieved toward targeted seniority">
+                {completedRoadmapSteps === totalRoadmapSteps
+                  ? 'All 4 milestones verified'
+                  : `${totalRoadmapSteps - completedRoadmapSteps} sprints to job-readiness`}
+              </span>
+              <span className="font-semibold text-gray-900 group-hover:text-emerald-700 flex items-center gap-0.5 text-[11px]">
+                <span>Roadmap</span>
+                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
           </div>
         </div>
       </div>

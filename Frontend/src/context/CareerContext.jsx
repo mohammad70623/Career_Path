@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   GLOBAL_LOCATIONS,
   getCountriesForRegion,
@@ -537,6 +538,73 @@ export const CareerProvider = ({ children }) => {
     invalidateCvCaches();
   };
 
+  // Skill Gap & Interactive Learning Roadmap States
+  const [selectedRoadmapPath, setSelectedRoadmapPath] = useState(null);
+  const [roadmapsByRole, setRoadmapsByRole] = useState({});
+
+  // Persistent Completed Milestones across roadmaps (persisted in localStorage)
+  const [completedMilestones, setCompletedMilestones] = useState(() => {
+    try {
+      const saved = localStorage.getItem('career_completed_milestones');
+      return saved ? JSON.parse(saved) : {};
+    } catch (err) {
+      console.warn('[CareerContext] Failed to parse completedMilestones from localStorage:', err);
+      return {};
+    }
+  });
+
+  const toggleMilestone = (milestoneId) => {
+    if (!milestoneId) return;
+    setCompletedMilestones((prev) => {
+      const updated = {
+        ...prev,
+        [milestoneId]: !prev[milestoneId]
+      };
+      try {
+        localStorage.setItem('career_completed_milestones', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('[CareerContext] Failed to save completedMilestones to localStorage:', err);
+      }
+      return updated;
+    });
+  };
+
+  // Sync learned skill directly into CV skills with user feedback toast
+  const syncSkillToCV = (skillName) => {
+    if (!skillName || typeof skillName !== 'string') return false;
+    const trimmed = skillName.trim();
+    if (!trimmed) return false;
+
+    let alreadyExists = false;
+    setCvData((prev) => {
+      const currentSkills = typeof prev.skills === 'string'
+        ? prev.skills.split(',').map((s) => s.trim()).filter(Boolean)
+        : Array.isArray(prev.skills)
+        ? [...prev.skills]
+        : [];
+
+      if (currentSkills.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+        alreadyExists = true;
+        return prev;
+      }
+
+      const updatedSkills = [...currentSkills, trimmed].join(', ');
+      return {
+        ...prev,
+        skills: updatedSkills
+      };
+    });
+
+    if (alreadyExists) {
+      toast(`"${trimmed}" is already present in your CV skills.`, { icon: 'ℹ️' });
+      return false;
+    } else {
+      toast.success(`✨ Added "${trimmed}" to your CV skills!`, { icon: '🚀' });
+      invalidateCvCaches();
+      return true;
+    }
+  };
+
   const resetCvData = () => {
     setCvData(initialCvData);
     setUploadedFile(null);
@@ -652,6 +720,16 @@ export const CareerProvider = ({ children }) => {
     // Roadmap & Steps
     roadmapSteps,
     setRoadmapSteps,
+
+    // Skill Gap & Interactive Learning Roadmap
+    selectedRoadmapPath,
+    setSelectedRoadmapPath,
+    roadmapsByRole,
+    setRoadmapsByRole,
+    completedMilestones,
+    setCompletedMilestones,
+    toggleMilestone,
+    syncSkillToCV,
 
     // Live Jobs & ML Scam Guard
     liveJobs,

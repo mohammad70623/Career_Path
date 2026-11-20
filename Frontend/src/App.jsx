@@ -22,6 +22,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { MyCVPage } from './pages/MyCVPage';
 import { CareerPathsPage } from './pages/CareerPathsPage';
 import { LiveJobsPage } from './pages/LiveJobsPage';
+import { SkillGapPage } from './pages/SkillGapPage';
 
 /**
  * Reusable luxury-styled placeholder view for testing routing & theme foundation.
@@ -268,7 +269,7 @@ export function App() {
               <Route path="/my-cv" element={<MyCVPage />} />
               <Route path="/career-paths" element={<CareerPathsPage />} />
               <Route path="/jobs" element={<LiveJobsPage />} />
-              <Route path="/skill-gap" element={<SkillGapView />} />
+              <Route path="/skill-gap" element={<SkillGapPage />} />
               <Route path="/applications" element={<ApplicationsView />} />
               <Route path="/interview" element={<InterviewView />} />
               <Route path="/radar-progress" element={<RadarProgressView />} />
